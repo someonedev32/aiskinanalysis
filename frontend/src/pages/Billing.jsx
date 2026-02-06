@@ -180,6 +180,8 @@ export default function Billing() {
               <div className="flex items-end gap-0.5 mb-4">
                 {isTrial ? (
                   <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">Free</span>
+                ) : id === "custom" ? (
+                  <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">Custom</span>
                 ) : (
                   <>
                     <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">
