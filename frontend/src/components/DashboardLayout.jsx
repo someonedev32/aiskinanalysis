@@ -4,8 +4,6 @@ import {
   CreditCard,
   BarChart3,
   Settings,
-  Webhook,
-  Palette,
   Scan,
   ChevronLeft,
   ChevronRight,
