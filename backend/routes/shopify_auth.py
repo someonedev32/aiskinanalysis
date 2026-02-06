@@ -1,5 +1,6 @@
 """Shopify OAuth Authentication Routes."""
 from fastapi import APIRouter, Request, HTTPException
+from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import uuid
@@ -39,7 +40,7 @@ async def install(shop: str):
         f"&state={nonce}"
     )
 
-    return {"redirect_url": install_url}
+    return RedirectResponse(url=install_url)
 
 
 @auth_router.get("/callback")
