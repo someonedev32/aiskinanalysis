@@ -14,9 +14,10 @@ const PLAN_ICONS = {
   starter: Shield,
   professional: Crown,
   enterprise: Rocket,
+  custom: Star,
 };
 
-const PLAN_ORDER = ["trial", "starter", "professional", "enterprise"];
+const PLAN_ORDER = ["trial", "starter", "professional", "enterprise", "custom"];
 
 export default function Billing() {
   const [plans, setPlans] = useState({});
