@@ -42,15 +42,17 @@ async def shopify_api_request(shop_domain: str, access_token: str, endpoint: str
         return response.json()
 
 
-async def create_recurring_charge(shop_domain: str, access_token: str, plan_name: str, price: float, trial_days: int = 7, return_url: str = ""):
+async def create_recurring_charge(shop_domain: str, access_token: str, plan_name: str, price: float, trial_days: int = 3, return_url: str = ""):
     """Create a recurring application charge (subscription)."""
+    import os
+    is_test = os.environ.get("SHOPIFY_BILLING_TEST", "false").lower() == "true"
     data = {
         "recurring_application_charge": {
             "name": plan_name,
             "price": price,
             "trial_days": trial_days,
             "return_url": return_url,
-            "test": True  # Set to False in production
+            "test": is_test
         }
     }
     return await shopify_api_request(
