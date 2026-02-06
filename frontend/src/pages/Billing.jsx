@@ -130,46 +130,14 @@ export default function Billing() {
         </Card>
       )}
 
-      {/* Monthly / Annual Toggle */}
-      <div className="flex justify-center">
-        <div className="bg-[#F2F0EB] rounded-lg p-1 flex gap-1" data-testid="billing-cycle-toggle">
-          <button
-            onClick={() => setCycle("monthly")}
-            className={`px-4 py-2 rounded-md text-xs font-medium transition-all ${
-              cycle === "monthly"
-                ? "bg-white text-[#1A1A1A] shadow-sm"
-                : "text-[#52525B] hover:text-[#1A1A1A]"
-            }`}
-            data-testid="cycle-monthly"
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setCycle("annual")}
-            className={`px-4 py-2 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
-              cycle === "annual"
-                ? "bg-white text-[#1A1A1A] shadow-sm"
-                : "text-[#52525B] hover:text-[#1A1A1A]"
-            }`}
-            data-testid="cycle-annual"
-          >
-            Annual
-            <Badge className="bg-[#3F6212]/10 text-[#3F6212] border-0 text-[9px] px-1.5 py-0">
-              -10%
-            </Badge>
-          </button>
-        </div>
-      </div>
-
       {/* Plan Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        {activePlans.filter(id => plans[id]).map((id) => {
+        {ALL_PLANS.filter(id => plans[id]).map((id) => {
           const plan = plans[id];
           const PlanIcon = PLAN_ICONS[id] || Zap;
           const isCurrentPlan = currentPlan === id;
-          const isPopular = id === "professional" || id === "professional_annual";
+          const isPopular = id === "professional";
           const isTrial = id === "trial";
-          const isAnnual = id.includes("annual");
           const isPlus = id === "enterprise_plus";
 
           return (
