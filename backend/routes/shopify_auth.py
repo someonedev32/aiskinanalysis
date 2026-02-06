@@ -103,7 +103,7 @@ async def callback(request: Request):
     await db.oauth_nonces.delete_one({"nonce": state})
 
     app_url = os.environ.get('APP_URL', '')
-    return {"redirect_url": f"{app_url}/dashboard?shop={shop}", "success": True}
+    return RedirectResponse(url=f"{app_url}/dashboard?shop={shop}")
 
 
 @auth_router.get("/shop/{shop_domain}")
