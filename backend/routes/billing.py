@@ -34,14 +34,14 @@ PLANS = {
         "price": 89.99,
         "scan_limit": 5000,
         "trial_days": 0,
-        "features": ["5,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Priority support"]
+        "features": ["5,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
     },
     "enterprise": {
         "name": "Enterprise",
         "price": 169.99,
         "scan_limit": 10000,
         "trial_days": 0,
-        "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Dedicated support", "Custom branding"]
+        "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
     },
     "starter_annual": {
         "name": "Starter Annual",
@@ -57,7 +57,7 @@ PLANS = {
         "scan_limit": 10000,
         "trial_days": 0,
         "billing_cycle": "annual",
-        "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Priority support", "Save 10%"]
+        "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Save 10%"]
     },
     "enterprise_annual": {
         "name": "Enterprise Annual",
@@ -65,14 +65,14 @@ PLANS = {
         "scan_limit": 20000,
         "trial_days": 0,
         "billing_cycle": "annual",
-        "features": ["20,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Dedicated support", "Custom branding", "Save 10%"]
+        "features": ["20,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Save 10%"]
     },
     "enterprise_plus": {
         "name": "Enterprise+",
         "price": 299.99,
         "scan_limit": 50000,
         "trial_days": 0,
-        "features": ["50,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Dedicated support", "Custom branding", "White-label", "SLA guarantee"]
+        "features": ["50,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "White-label"]
     }
 }
 
