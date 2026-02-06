@@ -112,7 +112,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Scan Trend Chart */}
         <Card className="col-span-2 p-6 border-[#E4E4E7]" data-testid="scan-trend-chart">
           <div className="flex items-center justify-between mb-5">
