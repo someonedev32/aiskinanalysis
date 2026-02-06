@@ -6,6 +6,8 @@ import Dashboard from "@/pages/Dashboard";
 import Billing from "@/pages/Billing";
 import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="terms" element={<Terms />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
