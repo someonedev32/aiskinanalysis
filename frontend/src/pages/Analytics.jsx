@@ -155,7 +155,7 @@ export default function Analytics() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-1/2 space-y-2">
+            <div className="w-full sm:w-1/2 space-y-2 mt-3 sm:mt-0">
               {(overview?.skin_type_distribution || []).map((item, i) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div
