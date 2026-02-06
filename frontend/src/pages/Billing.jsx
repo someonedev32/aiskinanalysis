@@ -77,8 +77,8 @@ export default function Billing() {
     return (
       <div className="space-y-6 animate-fade-in" data-testid="billing-loading">
         <div className="h-8 w-40 bg-[#F2F0EB] rounded-lg animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="h-80 bg-white rounded-xl border border-[#E4E4E7] animate-pulse" />
           ))}
         </div>
