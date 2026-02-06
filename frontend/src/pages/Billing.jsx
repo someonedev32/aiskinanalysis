@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Zap, Shield, Crown, Rocket, ArrowRight, Star, Mail } from "lucide-react";
+import { Check, Zap, Shield, Crown, Rocket, ArrowRight, Star } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,15 +14,20 @@ const PLAN_ICONS = {
   starter: Shield,
   professional: Crown,
   enterprise: Rocket,
-  custom: Star,
+  starter_annual: Shield,
+  professional_annual: Crown,
+  enterprise_annual: Rocket,
+  enterprise_plus: Star,
 };
 
-const PLAN_ORDER = ["trial", "starter", "professional", "enterprise", "custom"];
+const MONTHLY_PLANS = ["trial", "starter", "professional", "enterprise", "enterprise_plus"];
+const ANNUAL_PLANS = ["trial", "starter_annual", "professional_annual", "enterprise_annual", "enterprise_plus"];
 
 export default function Billing() {
   const [plans, setPlans] = useState({});
   const [billingStatus, setBillingStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cycle, setCycle] = useState("monthly");
 
   const shopDomain = new URLSearchParams(window.location.search).get("shop") || "demo-store.myshopify.com";
 
@@ -88,15 +93,13 @@ export default function Billing() {
 
   const currentPlan = billingStatus?.plan;
   const scanUsage = billingStatus ? Math.round((billingStatus.scan_count / (billingStatus.scan_limit || 1)) * 100) : 0;
+  const activePlans = cycle === "monthly" ? MONTHLY_PLANS : ANNUAL_PLANS;
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in" data-testid="billing-page">
-      {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#1A1A1A]">Billing</h1>
-        <p className="text-sm text-[#A1A1AA] mt-1">
-          Manage your subscription and billing
-        </p>
+        <p className="text-sm text-[#A1A1AA] mt-1">Manage your subscription and billing</p>
       </div>
 
       {/* Current Status */}
@@ -133,113 +136,142 @@ export default function Billing() {
         </Card>
       )}
 
+      {/* Monthly / Annual Toggle */}
+      <div className="flex justify-center">
+        <div className="bg-[#F2F0EB] rounded-lg p-1 flex gap-1" data-testid="billing-cycle-toggle">
+          <button
+            onClick={() => setCycle("monthly")}
+            className={`px-4 py-2 rounded-md text-xs font-medium transition-all ${
+              cycle === "monthly"
+                ? "bg-white text-[#1A1A1A] shadow-sm"
+                : "text-[#52525B] hover:text-[#1A1A1A]"
+            }`}
+            data-testid="cycle-monthly"
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setCycle("annual")}
+            className={`px-4 py-2 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
+              cycle === "annual"
+                ? "bg-white text-[#1A1A1A] shadow-sm"
+                : "text-[#52525B] hover:text-[#1A1A1A]"
+            }`}
+            data-testid="cycle-annual"
+          >
+            Annual
+            <Badge className="bg-[#3F6212]/10 text-[#3F6212] border-0 text-[9px] px-1.5 py-0">
+              -10%
+            </Badge>
+          </button>
+        </div>
+      </div>
+
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {PLAN_ORDER.filter(id => plans[id]).map((id) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        {activePlans.filter(id => plans[id]).map((id) => {
           const plan = plans[id];
           const PlanIcon = PLAN_ICONS[id] || Zap;
           const isCurrentPlan = currentPlan === id;
-          const isPopular = id === "professional";
+          const isPopular = id === "professional" || id === "professional_annual";
           const isTrial = id === "trial";
+          const isAnnual = id.includes("annual");
+          const isPlus = id === "enterprise_plus";
 
           return (
             <Card
               key={id}
-              className={`p-4 sm:p-5 border-2 transition-all duration-300 relative overflow-hidden flex flex-col ${
+              className={`p-4 border-2 transition-all duration-300 relative overflow-hidden flex flex-col ${
                 isPopular
                   ? "border-[#4A6C58] shadow-[0_8px_20px_rgba(74,108,88,0.12)]"
+                  : isPlus
+                  ? "border-[#D4A373] shadow-[0_8px_20px_rgba(212,163,115,0.12)]"
                   : "border-[#E4E4E7] hover:border-[#4A6C58]/30"
               }`}
               data-testid={`plan-card-${id}`}
             >
               {isPopular && (
                 <div className="absolute top-0 right-0">
-                  <Badge className="bg-[#D4A373] text-white border-0 rounded-none rounded-bl-lg text-[10px] px-2.5 py-1">
+                  <Badge className="bg-[#D4A373] text-white border-0 rounded-none rounded-bl-lg text-[9px] px-2 py-0.5">
                     POPULAR
                   </Badge>
                 </div>
               )}
+              {isAnnual && !isTrial && (
+                <div className="absolute top-0 right-0">
+                  <Badge className="bg-[#3F6212] text-white border-0 rounded-none rounded-bl-lg text-[9px] px-2 py-0.5">
+                    SAVE 10%
+                  </Badge>
+                </div>
+              )}
 
-              <div className="flex items-center gap-2.5 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    isPopular ? "bg-[#4A6C58]" : isTrial ? "bg-[#F2F0EB]" : "bg-[#F2F0EB]"
+                  className={`w-7 h-7 rounded-md flex items-center justify-center ${
+                    isPopular ? "bg-[#4A6C58]" : isPlus ? "bg-[#D4A373]" : "bg-[#F2F0EB]"
                   }`}
                 >
                   <PlanIcon
-                    className={`w-4 h-4 ${isPopular ? "text-white" : "text-[#4A6C58]"}`}
+                    className={`w-3.5 h-3.5 ${isPopular || isPlus ? "text-white" : "text-[#4A6C58]"}`}
                     strokeWidth={1.5}
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-[#1A1A1A]">{plan.name}</h3>
-                  {isTrial && <p className="text-[10px] text-[#D4A373] font-medium">3-day trial</p>}
+                  <h3 className="text-xs font-semibold text-[#1A1A1A]">{plan.name}</h3>
+                  {isTrial && <p className="text-[9px] text-[#D4A373] font-medium">3-day trial</p>}
                 </div>
               </div>
 
-              <div className="flex items-end gap-0.5 mb-4">
+              <div className="flex items-end gap-0.5 mb-3">
                 {isTrial ? (
-                  <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">Free</span>
-                ) : id === "custom" ? (
-                  <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">Custom</span>
+                  <span className="text-xl sm:text-2xl font-bold text-[#1A1A1A] font-[Manrope]">Free</span>
                 ) : (
                   <>
-                    <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">
+                    <span className="text-xl sm:text-2xl font-bold text-[#1A1A1A] font-[Manrope]">
                       ${plan.price}
                     </span>
-                    <span className="text-xs text-[#A1A1AA] mb-1">/mo</span>
+                    <span className="text-[10px] text-[#A1A1AA] mb-0.5">/mo</span>
                   </>
                 )}
               </div>
 
-              <ul className="space-y-2 mb-5 flex-1">
+              <ul className="space-y-1.5 mb-4 flex-1">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-[#52525B]">
-                    <Check className="w-3.5 h-3.5 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  <li key={i} className="flex items-start gap-1.5 text-[11px] text-[#52525B]">
+                    <Check className="w-3 h-3 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
 
               {isCurrentPlan ? (
-                <div className="space-y-2 mt-auto">
+                <div className="space-y-1.5 mt-auto">
                   <Button
                     disabled
-                    className="w-full bg-[#F2F0EB] text-[#4A6C58] cursor-default text-xs h-9"
+                    className="w-full bg-[#F2F0EB] text-[#4A6C58] cursor-default text-[11px] h-8"
                     data-testid={`plan-current-${id}`}
                   >
                     Current Plan
                   </Button>
-                  {!isTrial && id !== "custom" && (
+                  {!isTrial && (
                     <Button
                       variant="ghost"
                       onClick={handleCancel}
-                      className="w-full text-[#991B1B] hover:bg-red-50 text-[10px] h-7"
+                      className="w-full text-[#991B1B] hover:bg-red-50 text-[10px] h-6"
                       data-testid={`plan-cancel-${id}`}
                     >
                       Cancel
                     </Button>
                   )}
                 </div>
-              ) : id === "custom" ? (
-                <a
-                  href="mailto:support@inovation.app?subject=Custom%20Plan%20Request"
-                  className="mt-auto"
-                  data-testid="plan-contact-custom"
-                >
-                  <Button
-                    className="w-full bg-[#1A1A1A] hover:bg-[#333] text-white text-xs h-9"
-                  >
-                    <Mail className="w-3 h-3 mr-1.5" strokeWidth={1.5} />
-                    Contact Us
-                  </Button>
-                </a>
               ) : (
                 <Button
                   onClick={() => handleSubscribe(id)}
-                  className={`w-full mt-auto text-xs h-9 ${
+                  className={`w-full mt-auto text-[11px] h-8 ${
                     isPopular
                       ? "bg-[#4A6C58] hover:bg-[#3D5A49] text-white"
+                      : isPlus
+                      ? "bg-[#D4A373] hover:bg-[#C49363] text-white"
                       : "bg-white border border-[#4A6C58] text-[#4A6C58] hover:bg-[#F2F0EB]"
                   }`}
                   data-testid={`plan-subscribe-${id}`}
@@ -256,9 +288,10 @@ export default function Billing() {
       {/* Info */}
       <Card className="p-3 sm:p-4 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="billing-info">
         <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
-          Free trial lasts 3 days with a maximum of 10 scans. Paid plans are billed monthly through
-          Shopify's recurring subscription system. Charges appear on your Shopify invoice.
+          Free trial lasts 3 days with a maximum of 10 scans. Annual plans save 10% and double your scan credits.
+          Billing is managed through Shopify's recurring subscription system.
           Quotas reset monthly. Upgrade, downgrade, or cancel at any time.
+          Need more? Contact us at support@inovation.app
         </p>
       </Card>
     </div>
