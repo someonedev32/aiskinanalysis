@@ -6,8 +6,6 @@ import Dashboard from "@/pages/Dashboard";
 import Billing from "@/pages/Billing";
 import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
-import WebhookLogs from "@/pages/WebhookLogs";
-import ThemeSetup from "@/pages/ThemeSetup";
 
 function App() {
   return (
@@ -19,8 +17,6 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="webhooks" element={<WebhookLogs />} />
-            <Route path="theme-setup" element={<ThemeSetup />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
