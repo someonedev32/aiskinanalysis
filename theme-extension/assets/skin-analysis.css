@@ -1,0 +1,368 @@
+/**
+ * Lumina Skin AI - Theme App Extension Styles
+ * Minimal, trust-focused, skincare-friendly design
+ */
+
+:root {
+  --lumina-brand: #4A6C58;
+  --lumina-brand-dark: #3D5A49;
+  --lumina-bg: #FFFFFF;
+  --lumina-surface: #F9FAFB;
+  --lumina-bone: #F2F0EB;
+  --lumina-text: #1A1A1A;
+  --lumina-text-secondary: #52525B;
+  --lumina-text-muted: #A1A1AA;
+  --lumina-border: #E4E4E7;
+  --lumina-radius: 12px;
+}
+
+.lumina-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Header */
+.lumina-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.lumina-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--lumina-text);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+.lumina-subtitle {
+  font-size: 0.875rem;
+  color: var(--lumina-text-muted);
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Camera */
+.lumina-camera-section {
+  text-align: center;
+}
+
+.lumina-camera-frame {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 3/4;
+  margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--lumina-surface);
+  border: 3px solid var(--lumina-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+.lumina-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  transform: scaleX(-1);
+}
+
+.lumina-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--lumina-text-muted);
+  gap: 0.75rem;
+}
+
+.lumina-placeholder p {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Scan Animation */
+.lumina-scan-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lumina-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--lumina-brand);
+  box-shadow: 0 0 20px var(--lumina-brand), 0 0 60px var(--lumina-brand);
+  animation: luminaScan 2.5s ease-in-out infinite;
+}
+
+@keyframes luminaScan {
+  0% { top: 0%; opacity: 1; }
+  50% { top: calc(100% - 3px); opacity: 0.8; }
+  100% { top: 0%; opacity: 1; }
+}
+
+/* Controls */
+.lumina-controls {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.lumina-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lumina-btn:active {
+  transform: scale(0.97);
+}
+
+.lumina-btn-primary {
+  background: var(--lumina-brand);
+  color: white;
+}
+
+.lumina-btn-primary:hover {
+  background: var(--lumina-brand-dark);
+}
+
+.lumina-btn-secondary {
+  background: var(--lumina-bone);
+  color: var(--lumina-text);
+}
+
+.lumina-btn-secondary:hover {
+  background: #E5E2DB;
+}
+
+/* Loading */
+.lumina-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+  color: var(--lumina-text);
+}
+
+.lumina-loading p {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.lumina-loading-sub {
+  font-size: 0.75rem;
+  color: var(--lumina-text-muted);
+}
+
+.lumina-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--lumina-border);
+  border-top: 3px solid var(--lumina-brand);
+  border-radius: 50%;
+  animation: luminaSpin 1s linear infinite;
+}
+
+@keyframes luminaSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Results */
+.lumina-results {
+  margin-top: 2rem;
+}
+
+.lumina-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.lumina-results-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--lumina-text);
+  margin: 0;
+}
+
+.lumina-score {
+  text-align: center;
+}
+
+.lumina-info-card,
+.lumina-routine-card {
+  background: var(--lumina-surface);
+  border: 1px solid var(--lumina-border);
+  border-radius: var(--lumina-radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.lumina-info-card h4,
+.lumina-routine-card h4 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--lumina-text);
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lumina-badge {
+  display: inline-block;
+  background: var(--lumina-brand);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.lumina-severity {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.lumina-severity-mild { background: #ECFDF5; color: #065F46; }
+.lumina-severity-moderate { background: #FFFBEB; color: #92400E; }
+.lumina-severity-significant { background: #FEF2F2; color: #991B1B; }
+
+.lumina-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lumina-tag {
+  display: inline-block;
+  background: var(--lumina-bone);
+  color: var(--lumina-text-secondary);
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.lumina-ingredient {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--lumina-border);
+  font-size: 0.8125rem;
+}
+
+.lumina-ingredient:last-child {
+  border-bottom: none;
+}
+
+.lumina-ingredient strong {
+  color: var(--lumina-text);
+}
+
+.lumina-ingredient span {
+  color: var(--lumina-text-muted);
+  font-size: 0.75rem;
+}
+
+.lumina-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+}
+
+.lumina-step-num {
+  width: 24px;
+  height: 24px;
+  background: var(--lumina-brand);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.lumina-step strong {
+  font-size: 0.8125rem;
+  color: var(--lumina-text);
+}
+
+.lumina-step span {
+  font-size: 0.75rem;
+  color: var(--lumina-text-muted);
+}
+
+.lumina-summary {
+  background: var(--lumina-bone);
+  border-radius: var(--lumina-radius);
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.lumina-summary p {
+  font-size: 0.875rem;
+  color: var(--lumina-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Disclaimer */
+.lumina-disclaimer {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--lumina-surface);
+  border-radius: 8px;
+  border: 1px solid var(--lumina-border);
+}
+
+.lumina-disclaimer p {
+  font-size: 0.6875rem;
+  color: var(--lumina-text-muted);
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .lumina-wrapper {
+    padding: 1rem;
+  }
+  
+  .lumina-title {
+    font-size: 1.375rem;
+  }
+  
+  .lumina-camera-frame {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+}
