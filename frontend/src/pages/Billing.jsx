@@ -134,7 +134,7 @@ export default function Billing() {
       )}
 
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {PLAN_ORDER.filter(id => plans[id]).map((id) => {
           const plan = plans[id];
           const PlanIcon = PLAN_ICONS[id] || Zap;
