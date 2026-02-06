@@ -101,8 +101,16 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        {/* Support */}
-        <div className="px-4 py-3 border-t border-[#E4E4E7]">
+        {/* Footer Links */}
+        <div className="px-4 py-3 border-t border-[#E4E4E7] space-y-2">
+          <div className="flex gap-3">
+            <NavLink to="/privacy" onClick={() => setMobileOpen(false)} className="text-[10px] text-[#A1A1AA] hover:text-[#4A6C58] transition-colors" data-testid="privacy-link">
+              Privacy Policy
+            </NavLink>
+            <NavLink to="/terms" onClick={() => setMobileOpen(false)} className="text-[10px] text-[#A1A1AA] hover:text-[#4A6C58] transition-colors" data-testid="terms-link">
+              Terms of Service
+            </NavLink>
+          </div>
           <a
             href="mailto:support@inovation.app"
             className="flex items-center gap-2 text-xs text-[#A1A1AA] hover:text-[#4A6C58] transition-colors"
