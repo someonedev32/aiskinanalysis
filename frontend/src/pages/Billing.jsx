@@ -184,13 +184,8 @@ export default function Billing() {
               </div>
 
               {/* Scan Limit */}
-              <p className="text-sm font-medium text-[#52525B] mb-2">
+              <p className="text-sm font-medium text-[#52525B] mb-5">
                 {plan.scan_limit.toLocaleString()} Analysis / Monthly
-              </p>
-
-              {/* Annual Option */}
-              <p className="text-xs text-[#4A6C58] font-medium mb-5">
-                or ${plan.yearly_price?.toLocaleString()}/year and save {plan.yearly_savings}%
               </p>
 
               {/* Features */}
