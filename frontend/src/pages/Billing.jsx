@@ -89,7 +89,6 @@ export default function Billing() {
 
   const currentPlan = billingStatus?.plan;
   const scanUsage = billingStatus ? Math.round((billingStatus.scan_count / (billingStatus.scan_limit || 1)) * 100) : 0;
-  const activePlans = cycle === "monthly" ? MONTHLY_PLANS : ANNUAL_PLANS;
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in" data-testid="billing-page">
