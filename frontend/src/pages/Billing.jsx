@@ -23,7 +23,6 @@ export default function Billing() {
   const [plans, setPlans] = useState({});
   const [billingStatus, setBillingStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [cycle, setCycle] = useState("monthly");
 
   const shopDomain = new URLSearchParams(window.location.search).get("shop") || "demo-store.myshopify.com";
 
