@@ -1,5 +1,5 @@
 /**
- * Lumina Skin AI - Theme App Extension JavaScript
+ * AI Skin Analysis - Theme App Extension JavaScript
  * Handles camera capture and skin analysis via App Proxy
  * 
  * No images are stored - analysis is performed in real-time only.
