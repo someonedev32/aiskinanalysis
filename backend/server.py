@@ -15,7 +15,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app
-app = FastAPI(title="Lumina Skin AI - Shopify App")
+app = FastAPI(title="AI Skin Analysis - Shopify App")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
