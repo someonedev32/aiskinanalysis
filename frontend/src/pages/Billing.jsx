@@ -159,13 +159,6 @@ export default function Billing() {
                   </Badge>
                 </div>
               )}
-              {isAnnual && !isTrial && (
-                <div className="absolute top-0 right-0">
-                  <Badge className="bg-[#3F6212] text-white border-0 rounded-none rounded-bl-lg text-[9px] px-2 py-0.5">
-                    SAVE 10%
-                  </Badge>
-                </div>
-              )}
 
               <div className="flex items-center gap-2 mb-3">
                 <div
