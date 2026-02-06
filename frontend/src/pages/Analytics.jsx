@@ -83,9 +83,9 @@ export default function Analytics() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Daily Scans Bar Chart */}
-        <Card className="p-6 border-[#E4E4E7]" data-testid="daily-scans-chart">
+        <Card className="p-4 sm:p-6 border-[#E4E4E7]" data-testid="daily-scans-chart">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-sm font-semibold text-[#1A1A1A]">Daily Scans</h3>
             <Calendar className="w-4 h-4 text-[#A1A1AA]" strokeWidth={1.5} />
