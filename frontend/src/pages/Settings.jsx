@@ -130,9 +130,67 @@ export default function Settings() {
                 </li>
                 <li>Paste that number above and save</li>
               </ol>
-              <p className="text-[11px] text-[#A1A1AA] mt-2">After analysis, customers will see recommended products from this collection based on their skin type.</p>
             </div>
           </div>
+        </div>
+      </Card>
+
+      {/* Product Matching Guide */}
+      <Card className="p-6 border-[#E4E4E7]" data-testid="product-matching-card">
+        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Product Matching</h3>
+        <p className="text-xs text-[#A1A1AA] mb-5">
+          How the app recommends products based on skin analysis results
+        </p>
+
+        <div className="p-4 bg-[#F9FAFB] rounded-lg border border-[#E4E4E7] space-y-4">
+          <div>
+            <p className="text-xs text-[#52525B] font-medium mb-2">How it works:</p>
+            <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+              After AI analysis, customers receive their skin type (Oily, Dry, Normal, Combination, Sensitive) and a list of recommended ingredients. The app matches your products using <strong>tags</strong> you add to your products in Shopify.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs text-[#52525B] font-medium mb-2">Step 1: Tag your products by skin type</p>
+            <p className="text-[11px] text-[#A1A1AA] mb-2">Go to each product in Shopify Admin and add these tags:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {["skin-oily", "skin-dry", "skin-normal", "skin-combination", "skin-sensitive"].map((tag) => (
+                <span key={tag} className="text-[10px] bg-[#F2F0EB] text-[#4A6C58] px-2 py-1 rounded font-mono">{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-[#52525B] font-medium mb-2">Step 2: Tag by ingredients (optional)</p>
+            <p className="text-[11px] text-[#A1A1AA] mb-2">Add ingredient tags for more precise matching:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {["hyaluronic-acid", "niacinamide", "retinol", "vitamin-c", "salicylic-acid", "ceramides", "spf"].map((tag) => (
+                <span key={tag} className="text-[10px] bg-[#F2F0EB] text-[#4A6C58] px-2 py-1 rounded font-mono">{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-[#52525B] font-medium mb-2">Step 3: Tag by product type (optional)</p>
+            <p className="text-[11px] text-[#A1A1AA] mb-2">Match products to AM/PM routine steps:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {["cleanser", "toner", "serum", "moisturizer", "sunscreen", "treatment", "eye-cream", "mask"].map((tag) => (
+                <span key={tag} className="text-[10px] bg-[#F2F0EB] text-[#4A6C58] px-2 py-1 rounded font-mono">{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-[#E4E4E7]">
+            <p className="text-xs text-[#52525B] font-medium mb-1">Example:</p>
+            <p className="text-[11px] text-[#A1A1AA]">
+              A moisturizer for oily skin with niacinamide would have tags:<br/>
+              <span className="font-mono text-[10px] bg-[#F2F0EB] text-[#4A6C58] px-1.5 py-0.5 rounded inline-block mt-1">skin-oily, moisturizer, niacinamide</span>
+            </p>
+            <p className="text-[11px] text-[#A1A1AA] mt-2">
+              When a customer is detected as "Oily skin" with "Niacinamide" recommended, this product will appear in their results.
+            </p>
+          </div>
+        </div>
         </div>
       </Card>
 
