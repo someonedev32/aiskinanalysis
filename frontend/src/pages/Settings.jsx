@@ -191,7 +191,6 @@ export default function Settings() {
             </p>
           </div>
         </div>
-        </div>
       </Card>
 
       {/* Branding */}
