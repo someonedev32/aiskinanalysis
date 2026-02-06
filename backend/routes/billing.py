@@ -43,12 +43,36 @@ PLANS = {
         "trial_days": 0,
         "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Dedicated support", "Custom branding"]
     },
-    "custom": {
-        "name": "Custom",
-        "price": 0,
-        "scan_limit": 0,
+    "starter_annual": {
+        "name": "Starter Annual",
+        "price": 17.99,
+        "scan_limit": 2000,
         "trial_days": 0,
-        "features": ["Unlimited scans", "Custom AI model", "White-label solution", "Dedicated account manager", "SLA guarantee", "Custom integrations"]
+        "billing_cycle": "annual",
+        "features": ["2,000 scans/month", "AI skin analysis", "Full recommendations", "AM/PM routines", "Email support", "Save 10%"]
+    },
+    "professional_annual": {
+        "name": "Professional Annual",
+        "price": 80.99,
+        "scan_limit": 10000,
+        "trial_days": 0,
+        "billing_cycle": "annual",
+        "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Priority support", "Save 10%"]
+    },
+    "enterprise_annual": {
+        "name": "Enterprise Annual",
+        "price": 152.99,
+        "scan_limit": 20000,
+        "trial_days": 0,
+        "billing_cycle": "annual",
+        "features": ["20,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Dedicated support", "Custom branding", "Save 10%"]
+    },
+    "enterprise_plus": {
+        "name": "Enterprise+",
+        "price": 299.99,
+        "scan_limit": 50000,
+        "trial_days": 0,
+        "features": ["50,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Dedicated support", "Custom branding", "White-label", "SLA guarantee"]
     }
 }
 
