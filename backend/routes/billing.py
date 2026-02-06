@@ -1,0 +1,190 @@
+"""Billing Routes - Shopify Recurring Subscription Billing."""
+from fastapi import APIRouter, HTTPException
+from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel
+import os
+import logging
+from datetime import datetime, timezone
+from utils.shopify_client import create_recurring_charge, get_recurring_charge, activate_recurring_charge
+
+logger = logging.getLogger(__name__)
+billing_router = APIRouter()
+
+client = AsyncIOMotorClient(os.environ['MONGO_URL'])
+db = client[os.environ['DB_NAME']]
+
+# Plan definitions
+PLANS = {
+    "starter": {
+        "name": "Starter",
+        "price": 4.99,
+        "scan_limit": 100,
+        "trial_days": 7,
+        "features": ["100 scans/month", "AI skin analysis", "Basic recommendations", "Email support"]
+    },
+    "professional": {
+        "name": "Professional",
+        "price": 9.99,
+        "scan_limit": 250,
+        "trial_days": 7,
+        "features": ["250 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "Priority support"]
+    }
+}
+
+
+class SubscribeRequest(BaseModel):
+    shop_domain: str
+    plan_id: str
+
+
+class ActivateRequest(BaseModel):
+    shop_domain: str
+    charge_id: str
+
+
+@billing_router.get("/plans")
+async def get_plans():
+    """Get available billing plans."""
+    return {"plans": PLANS}
+
+
+@billing_router.post("/subscribe")
+async def subscribe(req: SubscribeRequest):
+    """Create a subscription for a shop."""
+    plan = PLANS.get(req.plan_id)
+    if not plan:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+
+    shop = await db.shops.find_one({"shop_domain": req.shop_domain})
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    access_token = shop.get("access_token", "")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Shop not authenticated")
+
+    app_url = os.environ.get('APP_URL', '')
+    return_url = f"{app_url}/api/billing/confirm?shop={req.shop_domain}&plan={req.plan_id}"
+
+    try:
+        result = await create_recurring_charge(
+            req.shop_domain,
+            access_token,
+            plan["name"],
+            plan["price"],
+            plan["trial_days"],
+            return_url
+        )
+
+        charge = result.get("recurring_application_charge", {})
+        confirmation_url = charge.get("confirmation_url", "")
+
+        # Store pending subscription
+        await db.subscriptions.insert_one({
+            "shop_domain": req.shop_domain,
+            "plan_id": req.plan_id,
+            "charge_id": str(charge.get("id", "")),
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+        return {"confirmation_url": confirmation_url, "charge_id": charge.get("id")}
+
+    except Exception as e:
+        logger.error(f"Failed to create subscription: {e}")
+        raise HTTPException(status_code=500, detail=f"Billing error: {str(e)}")
+
+
+@billing_router.get("/confirm")
+async def confirm_subscription(shop: str, plan: str, charge_id: str = ""):
+    """Confirm subscription after merchant approval."""
+    shop_data = await db.shops.find_one({"shop_domain": shop})
+    if not shop_data:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    access_token = shop_data.get("access_token", "")
+    plan_data = PLANS.get(plan)
+    if not plan_data:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+
+    if charge_id:
+        try:
+            # Verify charge status
+            charge_result = await get_recurring_charge(shop, access_token, charge_id)
+            charge = charge_result.get("recurring_application_charge", {})
+
+            if charge.get("status") == "accepted":
+                await activate_recurring_charge(shop, access_token, charge_id)
+        except Exception as e:
+            logger.error(f"Failed to activate charge: {e}")
+
+    # Update shop with plan info
+    await db.shops.update_one(
+        {"shop_domain": shop},
+        {
+            "$set": {
+                "plan": plan,
+                "scan_limit": plan_data["scan_limit"],
+                "scan_count": 0,
+                "billing_status": "active",
+                "billing_updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+
+    # Update subscription record
+    await db.subscriptions.update_one(
+        {"shop_domain": shop, "plan_id": plan, "status": "pending"},
+        {"$set": {"status": "active", "activated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    app_url = os.environ.get('APP_URL', '')
+    return {"success": True, "redirect_url": f"{app_url}/billing?shop={shop}&activated=true"}
+
+
+@billing_router.get("/status/{shop_domain}")
+async def get_billing_status(shop_domain: str):
+    """Get current billing status for a shop."""
+    shop = await db.shops.find_one({"shop_domain": shop_domain}, {"_id": 0, "access_token": 0})
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    subscription = await db.subscriptions.find_one(
+        {"shop_domain": shop_domain, "status": "active"},
+        {"_id": 0}
+    )
+
+    plan_info = PLANS.get(shop.get("plan", ""), {})
+
+    return {
+        "shop_domain": shop_domain,
+        "plan": shop.get("plan"),
+        "plan_info": plan_info,
+        "scan_count": shop.get("scan_count", 0),
+        "scan_limit": shop.get("scan_limit", 0),
+        "billing_status": shop.get("billing_status", "none"),
+        "subscription": subscription
+    }
+
+
+@billing_router.post("/cancel")
+async def cancel_subscription(req: SubscribeRequest):
+    """Cancel a shop's subscription."""
+    await db.shops.update_one(
+        {"shop_domain": req.shop_domain},
+        {
+            "$set": {
+                "plan": None,
+                "scan_limit": 0,
+                "billing_status": "cancelled",
+                "billing_updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+
+    await db.subscriptions.update_one(
+        {"shop_domain": req.shop_domain, "status": "active"},
+        {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    return {"success": True, "message": "Subscription cancelled"}
