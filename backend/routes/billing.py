@@ -15,40 +15,32 @@ db = client[os.environ['DB_NAME']]
 
 # Plan definitions
 PLANS = {
-    "trial": {
-        "name": "Free Trial",
-        "price": 0,
-        "scan_limit": 10,
-        "trial_days": 3,
-        "features": ["10 scans total", "AI skin analysis", "Basic recommendations", "3-day trial"]
-    },
-    "starter": {
-        "name": "Starter",
-        "price": 19.99,
+    "start": {
+        "name": "Start",
+        "price": 39,
         "scan_limit": 1000,
-        "trial_days": 0,
-        "features": ["1,000 scans/month", "AI skin analysis", "Full recommendations", "AM/PM routines", "Email support"]
+        "trial_days": 3,
+        "yearly_price": 320,
+        "yearly_savings": 32,
+        "features": ["1,000 analysis/month", "AI skin analysis", "Full recommendations", "AM/PM routines", "Email support"]
     },
-    "professional": {
-        "name": "Professional",
-        "price": 89.99,
+    "plus": {
+        "name": "Plus",
+        "price": 99,
         "scan_limit": 5000,
-        "trial_days": 0,
-        "features": ["5,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
+        "trial_days": 3,
+        "yearly_price": 830,
+        "yearly_savings": 30,
+        "features": ["5,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
     },
-    "enterprise": {
-        "name": "Enterprise",
-        "price": 169.99,
+    "growth": {
+        "name": "Growth",
+        "price": 179,
         "scan_limit": 10000,
-        "trial_days": 0,
-        "features": ["10,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
-    },
-    "enterprise_plus": {
-        "name": "Enterprise+",
-        "price": 299.99,
-        "scan_limit": 50000,
-        "trial_days": 0,
-        "features": ["50,000 scans/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching", "White-label"]
+        "trial_days": 3,
+        "yearly_price": 1500,
+        "yearly_savings": 30,
+        "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
     }
 }
 
