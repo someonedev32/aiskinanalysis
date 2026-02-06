@@ -41,7 +41,7 @@ export default function DashboardLayout() {
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-sm font-semibold text-[#1A1A1A] tracking-tight whitespace-nowrap">
-                Lumina Skin AI
+                AI Skin Analysis
               </h1>
               <p className="text-[10px] text-[#A1A1AA] font-medium">Shopify App</p>
             </div>
