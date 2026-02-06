@@ -20,8 +20,6 @@ PLANS = {
         "price": 39,
         "scan_limit": 1000,
         "trial_days": 3,
-        "yearly_price": 320,
-        "yearly_savings": 32,
         "features": ["1,000 analysis/month", "AI skin analysis", "Full recommendations", "AM/PM routines", "Email support"]
     },
     "plus": {
@@ -29,8 +27,6 @@ PLANS = {
         "price": 99,
         "scan_limit": 5000,
         "trial_days": 3,
-        "yearly_price": 830,
-        "yearly_savings": 30,
         "features": ["5,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
     },
     "growth": {
@@ -38,8 +34,6 @@ PLANS = {
         "price": 179,
         "scan_limit": 10000,
         "trial_days": 3,
-        "yearly_price": 1500,
-        "yearly_savings": 30,
         "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
     }
 }
