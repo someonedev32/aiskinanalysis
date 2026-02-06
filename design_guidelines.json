@@ -1,0 +1,145 @@
+{
+  "identity": {
+    "name": "Lumina Skin AI",
+    "tone": "Clinical, Trustworthy, Serene, Intelligent",
+    "theme_mode": "light",
+    "emotional_archetype": "Organic & Earthy (Trust, Wellness)"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["600", "700"],
+      "letter_spacing": "-0.02em"
+    },
+    "body": {
+      "font_family": "Inter, sans-serif",
+      "weights": ["400", "500"],
+      "letter_spacing": "0em"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "weights": ["400"]
+    }
+  },
+  "colors": {
+    "primary": {
+      "DEFAULT": "#4A6C58",
+      "foreground": "#FFFFFF",
+      "description": "Deep Sage - Used for primary actions, buttons, active states. Signifies growth and health."
+    },
+    "secondary": {
+      "DEFAULT": "#F2F0EB",
+      "foreground": "#2C3E34",
+      "description": "Bone/Clay - Used for page backgrounds, subtle panels. Reduces eye strain compared to pure white."
+    },
+    "accent": {
+      "DEFAULT": "#D4A373",
+      "foreground": "#FFFFFF",
+      "description": "Soft Bronze - Used for premium features, 'Pro' badges, and calls to upgrade."
+    },
+    "background": "#FFFFFF",
+    "surface": "#F9FAFB",
+    "text": {
+      "primary": "#1A1A1A",
+      "secondary": "#52525B",
+      "muted": "#A1A1AA"
+    },
+    "border": "#E4E4E7",
+    "success": "#3F6212",
+    "warning": "#854D0E",
+    "error": "#991B1B"
+  },
+  "spacing": {
+    "scale": "Generous",
+    "container_padding": "p-8 md:p-12",
+    "section_gap": "gap-8",
+    "element_gap": "gap-4"
+  },
+  "visual_enhancers": {
+    "border_radius": {
+      "card": "rounded-xl",
+      "button": "rounded-lg",
+      "input": "rounded-md"
+    },
+    "shadows": {
+      "card": "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+      "floating": "shadow-[0_12px_24px_rgba(74,108,88,0.15)]",
+      "inner": "shadow-inner"
+    },
+    "textures": {
+      "noise": "opacity-50 mix-blend-overlay (optional for hero sections)",
+      "glass": "bg-white/80 backdrop-blur-md border border-white/20"
+    }
+  },
+  "layout_strategies": {
+    "dashboard": {
+      "type": "Bento Grid (High Density)",
+      "wrapper": "grid grid-cols-1 md:grid-cols-4 gap-6",
+      "sidebar": "Fixed left, w-64, clean typography",
+      "header": "Minimal, breadcrumbs only"
+    },
+    "skin_analysis": {
+      "type": "The Focus Mode",
+      "wrapper": "flex flex-col items-center justify-center min-h-[80vh]",
+      "camera_frame": "relative w-full max-w-md aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-white"
+    },
+    "marketing_landing": {
+      "type": "Asymmetrical Text-Heavy",
+      "hero": "Left aligned big type, right aligned abstract skin texture"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#4A6C58] hover:bg-[#3D5A49] text-white font-medium px-6 py-2.5 shadow-sm transition-all active:scale-95",
+      "secondary": "bg-[#F2F0EB] hover:bg-[#E5E2DB] text-[#4A6C58] font-medium px-6 py-2.5",
+      "outline": "border border-[#E4E4E7] bg-transparent hover:bg-gray-50 text-[#1A1A1A]"
+    },
+    "cards": {
+      "default": "bg-white border border-[#E4E4E7] p-6 rounded-xl hover:border-[#4A6C58]/30 transition-colors",
+      "metric": "bg-white border-none shadow-[0_2px_10px_rgba(0,0,0,0.03)] p-6 rounded-2xl flex flex-col justify-between h-32"
+    },
+    "camera_interface": {
+      "overlay": "absolute inset-0 pointer-events-none border-[2px] border-white/30 rounded-3xl",
+      "scan_line": "absolute top-0 left-0 right-0 h-1 bg-[#4A6C58] shadow-[0_0_15px_#4A6C58] animate-scan"
+    }
+  },
+  "motion": {
+    "principles": "Smooth, slow, clinical. No bounce.",
+    "transitions": "transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+    "scan_animation": "keyframes: scan { 0% { top: 0% } 50% { top: 100% } 100% { top: 0% } }"
+  },
+  "image_assets": {
+    "hero_bg": {
+      "url": "https://images.unsplash.com/photo-1609105734153-5a26118e60cb?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Abstract healthy skin texture",
+      "category": "texture"
+    },
+    "clinic_interior": {
+      "url": "https://images.unsplash.com/photo-1665231795856-769fb08a90bc?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Clean minimal clinic office",
+      "category": "dashboard_placeholder"
+    },
+    "scan_demo_face": {
+      "url": "https://images.unsplash.com/photo-1710580889701-9fa8f2cd5927?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Close up face for scan demo",
+      "category": "demo"
+    }
+  },
+  "universal_guidelines": {
+    "react_strict": "Use functional components with hooks.",
+    "css_approach": "Tailwind CSS for 95% of styling. Custom CSS only for complex animations (like the scan line).",
+    "state_management": "Use React Context for global settings (Theme, Billing Status).",
+    "charts": "Use Recharts. Style them to be minimal: hide grid lines, use thin strokes.",
+    "icons": "Use Lucide React. Stroke width 1.5px for elegance."
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Install 'lucide-react', 'recharts', 'react-webcam', 'framer-motion', 'clsx', 'tailwind-merge'.",
+    "2. THEME: Update tailwind.config.js to include the custom colors (Deep Sage, Bone, Soft Bronze).",
+    "3. FONTS: Import Manrope and Inter from Google Fonts in index.css.",
+    "4. LAYOUT: Create a SidebarLayout for the Merchant Dashboard and a FullScreenLayout for the Camera App.",
+    "5. COMPONENT - CAMERA: Build a custom camera component using react-webcam. Add the 'Tracing Beam' scan animation over it.",
+    "6. COMPONENT - BILLING: Create a pricing card using the 'Tracing Beam' border effect for the 'Pro' plan to make it pop.",
+    "7. PROXY: The '/pages/skin-analysis' route must be built as a standalone SPA (Single Page App) feel, embedded via App Proxy.",
+    "8. ACCESSIBILITY: Ensure all form inputs have aria-labels and all colors pass WCAG AA."
+  ]
+}
