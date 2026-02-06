@@ -209,3 +209,49 @@ async def cancel_subscription(req: SubscribeRequest):
     )
 
     return {"success": True, "message": "Subscription cancelled"}
+
+
+class CreditRequest(BaseModel):
+    shop_domain: str
+    credits: int
+
+
+@billing_router.post("/add-credits")
+async def add_credits(req: CreditRequest):
+    """Admin: Add scan credits to a shop."""
+    shop = await db.shops.find_one({"shop_domain": req.shop_domain})
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    new_limit = shop.get("scan_limit", 0) + req.credits
+
+    await db.shops.update_one(
+        {"shop_domain": req.shop_domain},
+        {
+            "$set": {"scan_limit": new_limit},
+            "$push": {
+                "credit_history": {
+                    "credits": req.credits,
+                    "added_at": datetime.now(timezone.utc).isoformat(),
+                    "new_limit": new_limit
+                }
+            }
+        }
+    )
+
+    return {
+        "success": True,
+        "shop_domain": req.shop_domain,
+        "credits_added": req.credits,
+        "new_scan_limit": new_limit
+    }
+
+
+@billing_router.get("/shops")
+async def list_shops():
+    """Admin: List all shops with billing info."""
+    shops = await db.shops.find(
+        {},
+        {"_id": 0, "access_token": 0}
+    ).to_list(100)
+    return {"shops": shops}
