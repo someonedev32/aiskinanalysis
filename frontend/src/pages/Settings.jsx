@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Save, RefreshCw } from "lucide-react";
+import { Save, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function Settings() {
-  const shopDomain = "demo-store.myshopify.com";
+  const shopDomain = new URLSearchParams(window.location.search).get("shop") || "demo-store.myshopify.com";
   const [settings, setSettings] = useState({
     shop_domain: shopDomain,
     camera_enabled: true,
@@ -35,7 +35,7 @@ export default function Settings() {
       }
     };
     fetchSettings();
-  }, []);
+  }, [shopDomain]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -54,7 +54,7 @@ export default function Settings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#1A1A1A]">Settings</h1>
-          <p className="text-sm text-[#A1A1AA] mt-1">Configure your app preferences</p>
+          <p className="text-sm text-[#A1A1AA] mt-1">Configure how the skin analysis works on your store</p>
         </div>
         <Button
           onClick={handleSave}
@@ -71,40 +71,11 @@ export default function Settings() {
         </Button>
       </div>
 
-      {/* Shopify Configuration */}
-      <Card className="p-6 border-[#E4E4E7]" data-testid="shopify-config-card">
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Shopify Configuration</h3>
-        <p className="text-xs text-[#A1A1AA] mb-5">
-          Configure your Shopify API credentials and app settings
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <Label className="text-xs text-[#52525B]">Shop Domain</Label>
-            <Input
-              value={settings.shop_domain}
-              disabled
-              className="mt-1.5 bg-[#F9FAFB] text-sm"
-              data-testid="shop-domain-input"
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-[#52525B]">Shopify API Key</Label>
-            <Input
-              value="Configured via environment"
-              disabled
-              className="mt-1.5 bg-[#F9FAFB] text-sm"
-              data-testid="api-key-input"
-            />
-          </div>
-        </div>
-      </Card>
-
       {/* Skin Analysis Settings */}
       <Card className="p-6 border-[#E4E4E7]" data-testid="analysis-settings-card">
         <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Skin Analysis</h3>
         <p className="text-xs text-[#A1A1AA] mb-5">
-          Configure the skin analysis behavior
+          Control how customers interact with the skin analysis on your store
         </p>
 
         <div className="space-y-5">
@@ -112,7 +83,7 @@ export default function Settings() {
             <div>
               <Label className="text-sm text-[#1A1A1A]">Camera Capture</Label>
               <p className="text-xs text-[#A1A1AA] mt-0.5">
-                Enable webcam/mobile camera for skin analysis
+                Allow customers to use their camera for skin analysis
               </p>
             </div>
             <Switch
@@ -128,7 +99,7 @@ export default function Settings() {
             <div>
               <Label className="text-sm text-[#1A1A1A]">Auto-Recommend Products</Label>
               <p className="text-xs text-[#A1A1AA] mt-0.5">
-                Automatically suggest products based on analysis
+                Show product recommendations based on analysis results
               </p>
             </div>
             <Switch
@@ -150,7 +121,7 @@ export default function Settings() {
               data-testid="collection-id-input"
             />
             <p className="text-xs text-[#A1A1AA] mt-1">
-              Shopify collection ID for product recommendations
+              The Shopify collection used for product recommendations
             </p>
           </div>
         </div>
@@ -158,17 +129,17 @@ export default function Settings() {
 
       {/* Branding */}
       <Card className="p-6 border-[#E4E4E7]" data-testid="branding-card">
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Branding</h3>
+        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Widget Appearance</h3>
         <p className="text-xs text-[#A1A1AA] mb-5">
-          Customize the skin analysis widget appearance
+          Customize how the skin analysis looks on your store
         </p>
 
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-sm text-[#1A1A1A]">Custom Branding</Label>
+              <Label className="text-sm text-[#1A1A1A]">Custom Colors</Label>
               <p className="text-xs text-[#A1A1AA] mt-0.5">
-                Use your brand colors in the analysis widget
+                Match the widget to your store's branding
               </p>
             </div>
             <Switch
@@ -198,6 +169,22 @@ export default function Settings() {
               </div>
             </div>
           )}
+        </div>
+      </Card>
+
+      {/* How It Works */}
+      <Card className="p-5 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="help-card">
+        <div className="flex items-start gap-3">
+          <HelpCircle className="w-5 h-5 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+          <div>
+            <h3 className="text-sm font-semibold text-[#1A1A1A]">How to add to your store</h3>
+            <ol className="text-xs text-[#52525B] mt-2 space-y-1.5 list-decimal pl-4">
+              <li>Go to <strong>Online Store &gt; Themes &gt; Customize</strong></li>
+              <li>Navigate to the page where you want the skin analysis</li>
+              <li>Click <strong>Add section</strong> &gt; select <strong>AI Skin Analysis</strong></li>
+              <li>Save your theme</li>
+            </ol>
+          </div>
         </div>
       </Card>
     </div>
