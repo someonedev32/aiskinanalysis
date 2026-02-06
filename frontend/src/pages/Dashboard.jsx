@@ -73,7 +73,7 @@ export default function Dashboard() {
           Dashboard
         </h1>
         <p className="text-sm text-[#A1A1AA] mt-1">
-          Overview of your Lumina Skin AI performance
+          Overview of your AI Skin Analysis performance
         </p>
       </div>
 
