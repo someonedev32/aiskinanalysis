@@ -17,8 +17,6 @@ const NAV_ITEMS = [
   { path: "/billing", icon: CreditCard, label: "Billing" },
   { path: "/analytics", icon: BarChart3, label: "Analytics" },
   { path: "/settings", icon: Settings, label: "Settings" },
-  { path: "/webhooks", icon: Webhook, label: "Webhooks" },
-  { path: "/theme-setup", icon: Palette, label: "Theme Setup" },
 ];
 
 export default function DashboardLayout() {
