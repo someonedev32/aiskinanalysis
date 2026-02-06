@@ -1,0 +1,120 @@
+{% comment %}
+  Lumina Skin AI - Theme App Extension
+  Skin Analysis Block for /pages/skin-analysis
+  
+  This block provides an AI-powered skin analysis camera interface
+  that captures a snapshot and sends it to the backend for analysis.
+{% endcomment %}
+
+{% schema %}
+{
+  "name": "Skin Analysis",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "AI Skin Analysis"
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Get a personalized skin assessment in seconds. Our AI analyzes your skin type, concerns, and recommends the perfect routine."
+    },
+    {
+      "type": "color",
+      "id": "brand_color",
+      "label": "Primary Color",
+      "default": "#4A6C58"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_disclaimer",
+      "label": "Show Disclaimer",
+      "default": true
+    }
+  ]
+}
+{% endschema %}
+
+<div id="lumina-skin-analysis"
+     class="lumina-wrapper"
+     data-app-proxy-url="{{ shop.url }}/apps/skin-analysis"
+     data-shop="{{ shop.permanent_domain }}"
+     style="--lumina-brand: {{ block.settings.brand_color }}; --lumina-brand-dark: {{ block.settings.brand_color | color_darken: 15 }};">
+
+  <!-- Header -->
+  <div class="lumina-header">
+    <h2 class="lumina-title">{{ block.settings.heading }}</h2>
+    <p class="lumina-subtitle">{{ block.settings.subheading }}</p>
+  </div>
+
+  <!-- Camera Section -->
+  <div id="lumina-camera-section" class="lumina-camera-section">
+    <div id="lumina-camera-frame" class="lumina-camera-frame">
+      <video id="lumina-video" autoplay playsinline muted class="lumina-video"></video>
+      <canvas id="lumina-canvas" style="display:none;"></canvas>
+      
+      <!-- Scan Overlay -->
+      <div id="lumina-scan-overlay" class="lumina-scan-overlay" style="display:none;">
+        <div class="lumina-scan-line"></div>
+      </div>
+      
+      <!-- Camera Placeholder -->
+      <div id="lumina-placeholder" class="lumina-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <p>Tap to start camera</p>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="lumina-controls">
+      <button id="lumina-start-btn" class="lumina-btn lumina-btn-primary" onclick="luminaStartCamera()">
+        Start Camera
+      </button>
+      <button id="lumina-capture-btn" class="lumina-btn lumina-btn-primary" style="display:none;" onclick="luminaCapture()">
+        Analyze My Skin
+      </button>
+      <button id="lumina-retry-btn" class="lumina-btn lumina-btn-secondary" style="display:none;" onclick="luminaRetry()">
+        Try Again
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="lumina-loading" class="lumina-loading" style="display:none;">
+    <div class="lumina-spinner"></div>
+    <p>Analyzing your skin...</p>
+    <span class="lumina-loading-sub">This takes a few seconds</span>
+  </div>
+
+  <!-- Results Section -->
+  <div id="lumina-results" class="lumina-results" style="display:none;">
+    <div class="lumina-results-header">
+      <h3>Your Skin Analysis</h3>
+      <div id="lumina-score" class="lumina-score"></div>
+    </div>
+
+    <div id="lumina-skin-type" class="lumina-info-card"></div>
+    <div id="lumina-concerns" class="lumina-info-card"></div>
+    <div id="lumina-ingredients" class="lumina-info-card"></div>
+    <div id="lumina-am-routine" class="lumina-routine-card"></div>
+    <div id="lumina-pm-routine" class="lumina-routine-card"></div>
+    <div id="lumina-summary" class="lumina-summary"></div>
+  </div>
+
+  {% if block.settings.show_disclaimer %}
+  <div class="lumina-disclaimer">
+    <p>This analysis is for cosmetic purposes only and does not constitute medical advice. 
+    No images are stored — analysis is performed in real-time and discarded immediately.</p>
+  </div>
+  {% endif %}
+</div>
+
+{{ 'skin-analysis.css' | asset_url | stylesheet_tag }}
+{{ 'skin-analysis.js' | asset_url | script_tag }}
