@@ -20,21 +20,21 @@ PLANS = {
         "price": 39,
         "scan_limit": 1000,
         "trial_days": 3,
-        "features": ["1,000 analysis/month", "AI skin analysis", "Full recommendations", "AM/PM routines", "Email support"]
+        "features": ["1,000 analysis/month", "AI skin analysis", "Skin type detection", "AM/PM routines", "Scan history"]
     },
     "plus": {
         "name": "Plus",
         "price": 99,
         "scan_limit": 5000,
         "trial_days": 3,
-        "features": ["5,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
+        "features": ["5,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics"]
     },
     "growth": {
         "name": "Growth",
         "price": 179,
         "scan_limit": 10000,
         "trial_days": 3,
-        "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Product matching"]
+        "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching"]
     }
 }
 
