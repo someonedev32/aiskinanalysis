@@ -120,9 +120,18 @@ export default function Settings() {
               className="mt-1.5 text-sm"
               data-testid="collection-id-input"
             />
-            <p className="text-xs text-[#A1A1AA] mt-1">
-              The Shopify collection used for product recommendations
-            </p>
+            <div className="mt-2 p-3 bg-[#F9FAFB] rounded-lg border border-[#E4E4E7]">
+              <p className="text-xs text-[#52525B] font-medium mb-1.5">How to find your Collection ID:</p>
+              <ol className="text-[11px] text-[#A1A1AA] space-y-1 list-decimal pl-3.5">
+                <li>Go to <strong>Shopify Admin &gt; Products &gt; Collections</strong></li>
+                <li>Create or open a collection with your skincare products</li>
+                <li>Look at the URL — the number at the end is your Collection ID<br/>
+                  <code className="text-[10px] bg-[#F2F0EB] px-1.5 py-0.5 rounded mt-0.5 inline-block">admin.shopify.com/store/your-store/collections/<strong>123456789</strong></code>
+                </li>
+                <li>Paste that number above and save</li>
+              </ol>
+              <p className="text-[11px] text-[#A1A1AA] mt-2">After analysis, customers will see recommended products from this collection based on their skin type.</p>
+            </div>
           </div>
         </div>
       </Card>
