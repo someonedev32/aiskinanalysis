@@ -101,7 +101,57 @@ async def proxy_analyze_skin(request: Request):
         "concerns": result.get("concerns", [])
     })
 
-    return {"success": True, "result": result}
+    # Fetch matching products from Shopify if collection_id is set
+    products = []
+    settings = await db.settings.find_one({"shop_domain": shop}, {"_id": 0})
+    collection_id = settings.get("collection_id", "") if settings else ""
+    access_token = shop_data.get("access_token", "")
+
+    if collection_id and access_token:
+        try:
+            from utils.shopify_client import shopify_api_request
+            skin_type = result.get("skin_type", "").lower()
+            skin_tag = f"skin-{skin_type}"
+            ingredients = [i["name"].lower().replace(" ", "-") for i in result.get("ingredient_recommendations", [])]
+            product_types = [s["product_type"].lower() for s in result.get("am_routine", []) + result.get("pm_routine", [])]
+
+            # Get products from collection
+            collection_products = await shopify_api_request(
+                shop, access_token,
+                f"collections/{collection_id}/products.json?limit=50&fields=id,title,handle,image,tags,variants"
+            )
+
+            all_products = collection_products.get("products", [])
+
+            for product in all_products:
+                tags = [t.strip().lower() for t in product.get("tags", "").split(",")]
+                score = 0
+                if skin_tag in tags:
+                    score += 3
+                for ing in ingredients:
+                    if ing in tags:
+                        score += 2
+                for pt in product_types:
+                    if pt in tags:
+                        score += 1
+                if score > 0:
+                    image = product.get("image", {})
+                    variant = product.get("variants", [{}])[0]
+                    products.append({
+                        "id": product["id"],
+                        "title": product["title"],
+                        "handle": product["handle"],
+                        "image_url": image.get("src", "") if image else "",
+                        "price": variant.get("price", "0"),
+                        "match_score": score
+                    })
+
+            products.sort(key=lambda x: x["match_score"], reverse=True)
+            products = products[:6]
+        except Exception as e:
+            logger.warning(f"Product matching failed: {e}")
+
+    return {"success": True, "result": result, "products": products}
 
 
 @proxy_router.get("/products")
