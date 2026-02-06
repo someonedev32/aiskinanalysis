@@ -38,7 +38,7 @@ api_router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboar
 
 @api_router.get("/")
 async def root():
-    return {"message": "Lumina Skin AI API", "status": "running"}
+    return {"message": "AI Skin Analysis API", "status": "running"}
 
 @api_router.get("/health")
 async def health():
