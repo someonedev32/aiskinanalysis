@@ -4,20 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Zap, Shield, Crown, Rocket, ArrowRight, Star } from "lucide-react";
+import { Check, Zap, ArrowRight, Crown, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const PLAN_ICONS = {
-  trial: Zap,
-  starter: Shield,
-  professional: Crown,
-  enterprise: Rocket,
-  enterprise_plus: Star,
-};
-
-const ALL_PLANS = ["trial", "starter", "professional", "enterprise", "enterprise_plus"];
+const PLAN_ICONS = { start: Zap, plus: Crown, growth: Rocket };
+const PLAN_ORDER = ["start", "plus", "growth"];
 
 export default function Billing() {
   const [plans, setPlans] = useState({});
@@ -77,9 +70,9 @@ export default function Billing() {
     return (
       <div className="space-y-6 animate-fade-in" data-testid="billing-loading">
         <div className="h-8 w-40 bg-[#F2F0EB] rounded-lg animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-80 bg-white rounded-xl border border-[#E4E4E7] animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-96 bg-white rounded-xl border border-[#E4E4E7] animate-pulse" />
           ))}
         </div>
       </div>
@@ -109,7 +102,7 @@ export default function Billing() {
                   {billingStatus.plan_info?.name || "No Plan"}
                 </p>
                 <p className="text-xs text-[#A1A1AA]">
-                  {billingStatus.scan_count} / {billingStatus.scan_limit} scans used
+                  {billingStatus.scan_count} / {billingStatus.scan_limit} analysis used
                 </p>
               </div>
             </div>
@@ -130,109 +123,117 @@ export default function Billing() {
         </Card>
       )}
 
+      {/* Trial Banner */}
+      <Card className="p-4 border-[#4A6C58]/20 bg-[#4A6C58]/5" data-testid="trial-banner">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-[#4A6C58]" strokeWidth={1.5} />
+          <p className="text-sm text-[#1A1A1A] font-medium">
+            You have a 3-day free trial on all plans
+          </p>
+        </div>
+      </Card>
+
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        {ALL_PLANS.filter(id => plans[id]).map((id) => {
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+        {PLAN_ORDER.filter(id => plans[id]).map((id) => {
           const plan = plans[id];
           const PlanIcon = PLAN_ICONS[id] || Zap;
           const isCurrentPlan = currentPlan === id;
-          const isPopular = id === "professional";
-          const isTrial = id === "trial";
-          const isPlus = id === "enterprise_plus";
+          const isPopular = id === "plus";
 
           return (
             <Card
               key={id}
-              className={`p-4 border-2 transition-all duration-300 relative overflow-hidden flex flex-col ${
+              className={`p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden flex flex-col ${
                 isPopular
-                  ? "border-[#4A6C58] shadow-[0_8px_20px_rgba(74,108,88,0.12)]"
-                  : isPlus
-                  ? "border-[#D4A373] shadow-[0_8px_20px_rgba(212,163,115,0.12)]"
+                  ? "border-[#4A6C58] shadow-[0_12px_24px_rgba(74,108,88,0.15)]"
                   : "border-[#E4E4E7] hover:border-[#4A6C58]/30"
               }`}
               data-testid={`plan-card-${id}`}
             >
               {isPopular && (
                 <div className="absolute top-0 right-0">
-                  <Badge className="bg-[#D4A373] text-white border-0 rounded-none rounded-bl-lg text-[9px] px-2 py-0.5">
+                  <Badge className="bg-[#D4A373] text-white border-0 rounded-none rounded-bl-lg text-[10px] px-2.5 py-1">
                     POPULAR
                   </Badge>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2.5 mb-5">
                 <div
-                  className={`w-7 h-7 rounded-md flex items-center justify-center ${
-                    isPopular ? "bg-[#4A6C58]" : isPlus ? "bg-[#D4A373]" : "bg-[#F2F0EB]"
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                    isPopular ? "bg-[#4A6C58]" : "bg-[#F2F0EB]"
                   }`}
                 >
                   <PlanIcon
-                    className={`w-3.5 h-3.5 ${isPopular || isPlus ? "text-white" : "text-[#4A6C58]"}`}
+                    className={`w-4 h-4 ${isPopular ? "text-white" : "text-[#4A6C58]"}`}
                     strokeWidth={1.5}
                   />
                 </div>
-                <div>
-                  <h3 className="text-xs font-semibold text-[#1A1A1A]">{plan.name}</h3>
-                  {isTrial && <p className="text-[9px] text-[#D4A373] font-medium">3-day trial</p>}
+                <h3 className="text-base font-semibold text-[#1A1A1A]">{plan.name}</h3>
+              </div>
+
+              {/* Price */}
+              <div className="mb-1">
+                <div className="flex items-end gap-1">
+                  <span className="text-3xl sm:text-4xl font-bold text-[#1A1A1A] font-[Manrope]">
+                    ${plan.price}
+                  </span>
+                  <span className="text-sm text-[#A1A1AA] mb-1">/ month</span>
                 </div>
               </div>
 
-              <div className="flex items-end gap-0.5 mb-3">
-                {isTrial ? (
-                  <span className="text-xl sm:text-2xl font-bold text-[#1A1A1A] font-[Manrope]">Free</span>
-                ) : (
-                  <>
-                    <span className="text-xl sm:text-2xl font-bold text-[#1A1A1A] font-[Manrope]">
-                      ${plan.price}
-                    </span>
-                    <span className="text-[10px] text-[#A1A1AA] mb-0.5">/mo</span>
-                  </>
-                )}
-              </div>
+              {/* Scan Limit */}
+              <p className="text-sm font-medium text-[#52525B] mb-2">
+                {plan.scan_limit.toLocaleString()} Analysis / Monthly
+              </p>
 
-              <ul className="space-y-1.5 mb-4 flex-1">
+              {/* Annual Option */}
+              <p className="text-xs text-[#4A6C58] font-medium mb-5">
+                or ${plan.yearly_price?.toLocaleString()}/year and save {plan.yearly_savings}%
+              </p>
+
+              {/* Features */}
+              <ul className="space-y-2.5 mb-6 flex-1">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-1.5 text-[11px] text-[#52525B]">
-                    <Check className="w-3 h-3 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#52525B]">
+                    <Check className="w-4 h-4 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
 
+              {/* CTA */}
               {isCurrentPlan ? (
-                <div className="space-y-1.5 mt-auto">
+                <div className="space-y-2 mt-auto">
                   <Button
                     disabled
-                    className="w-full bg-[#F2F0EB] text-[#4A6C58] cursor-default text-[11px] h-8"
+                    className="w-full bg-[#F2F0EB] text-[#4A6C58] cursor-default h-10"
                     data-testid={`plan-current-${id}`}
                   >
                     Current Plan
                   </Button>
-                  {!isTrial && (
-                    <Button
-                      variant="ghost"
-                      onClick={handleCancel}
-                      className="w-full text-[#991B1B] hover:bg-red-50 text-[10px] h-6"
-                      data-testid={`plan-cancel-${id}`}
-                    >
-                      Cancel
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancel}
+                    className="w-full text-[#991B1B] hover:bg-red-50 text-xs h-8"
+                    data-testid={`plan-cancel-${id}`}
+                  >
+                    Cancel
+                  </Button>
                 </div>
               ) : (
                 <Button
                   onClick={() => handleSubscribe(id)}
-                  className={`w-full mt-auto text-[11px] h-8 ${
+                  className={`w-full mt-auto h-10 ${
                     isPopular
                       ? "bg-[#4A6C58] hover:bg-[#3D5A49] text-white"
-                      : isPlus
-                      ? "bg-[#D4A373] hover:bg-[#C49363] text-white"
                       : "bg-white border border-[#4A6C58] text-[#4A6C58] hover:bg-[#F2F0EB]"
                   }`}
                   data-testid={`plan-subscribe-${id}`}
                 >
-                  {isTrial ? "Start Trial" : "Subscribe"}
-                  <ArrowRight className="w-3 h-3 ml-1" strokeWidth={1.5} />
+                  Start
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" strokeWidth={1.5} />
                 </Button>
               )}
             </Card>
@@ -243,10 +244,10 @@ export default function Billing() {
       {/* Info */}
       <Card className="p-3 sm:p-4 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="billing-info">
         <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
-          Free trial lasts 3 days with a maximum of 10 scans.
-          Billing is managed through Shopify's recurring subscription system.
+          All plans include a 3-day free trial. Billing is managed through Shopify's recurring
+          subscription system. Charges appear on your Shopify invoice.
           Quotas reset monthly. Upgrade, downgrade, or cancel at any time.
-          Need more? Contact us at support@inovation.app
+          Need help? Contact us at support@inovation.app
         </p>
       </Card>
     </div>
