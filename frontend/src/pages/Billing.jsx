@@ -243,7 +243,7 @@ export default function Billing() {
       {/* Info */}
       <Card className="p-3 sm:p-4 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="billing-info">
         <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
-          Free trial lasts 3 days with a maximum of 10 scans. Annual plans save 10% and double your scan credits.
+          Free trial lasts 3 days with a maximum of 10 scans.
           Billing is managed through Shopify's recurring subscription system.
           Quotas reset monthly. Upgrade, downgrade, or cancel at any time.
           Need more? Contact us at support@inovation.app
