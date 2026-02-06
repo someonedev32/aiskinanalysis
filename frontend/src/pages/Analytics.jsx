@@ -121,7 +121,7 @@ export default function Analytics() {
         </Card>
 
         {/* Skin Type Pie Chart */}
-        <Card className="p-6 border-[#E4E4E7]" data-testid="skin-type-chart">
+        <Card className="p-4 sm:p-6 border-[#E4E4E7]" data-testid="skin-type-chart">
           <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">
             Skin Type Breakdown
           </h3>
