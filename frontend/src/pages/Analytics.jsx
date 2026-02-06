@@ -125,8 +125,8 @@ export default function Analytics() {
           <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">
             Skin Type Breakdown
           </h3>
-          <div className="h-56 flex items-center">
-            <div className="w-1/2">
+          <div className="h-56 flex flex-col sm:flex-row items-center">
+            <div className="w-full sm:w-1/2">
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
