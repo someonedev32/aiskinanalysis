@@ -27,9 +27,12 @@ export default function Terms() {
         <section>
           <h2 className="text-base font-semibold text-[#1A1A1A] mb-2">4. Subscription & Billing</h2>
           <ul className="list-disc pl-5 space-y-1">
-            <li>Free Trial: 3 days, limited to 10 scans</li>
+            <li>All plans include a 3-day free trial</li>
+            <li>Start: $39/month — 1,000 analysis per month</li>
+            <li>Plus: $99/month — 5,000 analysis per month</li>
+            <li>Growth: $179/month — 10,000 analysis per month</li>
             <li>Paid plans are billed monthly through Shopify's billing system</li>
-            <li>Scan quotas reset at the beginning of each billing cycle</li>
+            <li>Analysis quotas reset at the beginning of each billing cycle</li>
             <li>You may upgrade, downgrade, or cancel at any time</li>
             <li>Cancellation takes effect at the end of the current billing period</li>
             <li>No refunds for partial months</li>
@@ -37,8 +40,8 @@ export default function Terms() {
         </section>
 
         <section>
-          <h2 className="text-base font-semibold text-[#1A1A1A] mb-2">5. Scan Quotas</h2>
-          <p>Each plan includes a monthly scan limit. Once the limit is reached, customers will be unable to perform new analyses until the quota resets. You may upgrade your plan for additional scans.</p>
+          <h2 className="text-base font-semibold text-[#1A1A1A] mb-2">5. Analysis Quotas</h2>
+          <p>Each plan includes a monthly analysis limit. Once the limit is reached, customers will be unable to perform new analyses until the quota resets. You may upgrade your plan for additional analyses.</p>
         </section>
 
         <section>
