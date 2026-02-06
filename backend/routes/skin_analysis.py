@@ -1,9 +1,8 @@
 """Skin Analysis Routes using OpenAI Vision API."""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from openai import AsyncOpenAI
 import os
-import uuid
 import json
 import logging
 
@@ -43,39 +42,41 @@ You must return a valid JSON object with exactly this structure:
 Return ONLY the JSON object, no markdown formatting, no extra text."""
 
 
-def get_llm_key():
-    """Get the API key - prefer user's own key, fallback to Emergent key."""
-    key = os.environ.get('OPENAI_API_KEY', '')
-    if not key:
-        key = os.environ.get('EMERGENT_LLM_KEY', '')
-    return key
+def get_openai_client():
+    """Get OpenAI client with the configured API key."""
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
+    return AsyncOpenAI(api_key=api_key)
 
 
 async def perform_skin_analysis(image_base64: str) -> dict:
     """Perform AI skin analysis on a base64 encoded image."""
-    api_key = get_llm_key()
-    if not api_key:
-        raise HTTPException(status_code=500, detail="AI API key not configured")
+    client = get_openai_client()
 
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"skin-analysis-{uuid.uuid4()}",
-            system_message=SKIN_ANALYSIS_SYSTEM_PROMPT
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": SKIN_ANALYSIS_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Analyze this face image for skin type, concerns, and provide a complete skincare analysis. Return only valid JSON."},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}",
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=2000
         )
-        chat.with_model("openai", "gpt-4o")
 
-        image_content = ImageContent(image_base64=image_base64)
-
-        user_message = UserMessage(
-            text="Analyze this face image for skin type, concerns, and provide a complete skincare analysis. Return only valid JSON.",
-            file_contents=[image_content]
-        )
-
-        response = await chat.send_message(user_message)
-
-        # Parse JSON from response
-        response_text = response.strip()
+        response_text = response.choices[0].message.content.strip()
         if response_text.startswith("```"):
             response_text = response_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
