@@ -101,6 +101,17 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
+        {/* Support */}
+        <div className="px-4 py-3 border-t border-[#E4E4E7]">
+          <a
+            href="mailto:support@inovation.app"
+            className="flex items-center gap-2 text-xs text-[#A1A1AA] hover:text-[#4A6C58] transition-colors"
+            data-testid="support-email-link"
+          >
+            <Mail className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.5} />
+            <span>support@inovation.app</span>
+          </a>
+        </div>
       </aside>
 
       {/* Main Content */}
