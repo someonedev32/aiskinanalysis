@@ -25,7 +25,7 @@ const EXTENSION_STRUCTURE = `theme-extension/
     en.default.json           # Translations`;
 
 const LIQUID_SNIPPET = `{% comment %}
-  Lumina Skin AI - Theme App Extension
+  AI Skin Analysis - Theme App Extension
   Place this block on /pages/skin-analysis
 {% endcomment %}
 
