@@ -208,7 +208,7 @@ export default function Billing() {
                   >
                     Current Plan
                   </Button>
-                  {!isTrial && (
+                  {!isTrial && id !== "custom" && (
                     <Button
                       variant="ghost"
                       onClick={handleCancel}
@@ -219,6 +219,19 @@ export default function Billing() {
                     </Button>
                   )}
                 </div>
+              ) : id === "custom" ? (
+                <a
+                  href="mailto:support@inovation.app?subject=Custom%20Plan%20Request"
+                  className="mt-auto"
+                  data-testid="plan-contact-custom"
+                >
+                  <Button
+                    className="w-full bg-[#1A1A1A] hover:bg-[#333] text-white text-xs h-9"
+                  >
+                    <Mail className="w-3 h-3 mr-1.5" strokeWidth={1.5} />
+                    Contact Us
+                  </Button>
+                </a>
               ) : (
                 <Button
                   onClick={() => handleSubscribe(id)}
