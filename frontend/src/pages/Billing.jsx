@@ -3,22 +3,27 @@ import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Zap, Shield, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Check, Zap, Shield, Crown, Rocket, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const PLAN_ICONS = {
-  starter: Zap,
-  professional: Shield,
+  trial: Zap,
+  starter: Shield,
+  professional: Crown,
+  enterprise: Rocket,
 };
+
+const PLAN_ORDER = ["trial", "starter", "professional", "enterprise"];
 
 export default function Billing() {
   const [plans, setPlans] = useState({});
   const [billingStatus, setBillingStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const shopDomain = "demo-store.myshopify.com";
+  const shopDomain = new URLSearchParams(window.location.search).get("shop") || "demo-store.myshopify.com";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +41,7 @@ export default function Billing() {
       }
     };
     fetchData();
-  }, []);
+  }, [shopDomain]);
 
   const handleSubscribe = async (planId) => {
     try {
@@ -71,9 +76,9 @@ export default function Billing() {
     return (
       <div className="space-y-6 animate-fade-in" data-testid="billing-loading">
         <div className="h-8 w-40 bg-[#F2F0EB] rounded-lg animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-96 bg-white rounded-xl border border-[#E4E4E7] animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-80 bg-white rounded-xl border border-[#E4E4E7] animate-pulse" />
           ))}
         </div>
       </div>
@@ -81,9 +86,10 @@ export default function Billing() {
   }
 
   const currentPlan = billingStatus?.plan;
+  const scanUsage = billingStatus ? Math.round((billingStatus.scan_count / (billingStatus.scan_limit || 1)) * 100) : 0;
 
   return (
-    <div className="space-y-8 animate-fade-in" data-testid="billing-page">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in" data-testid="billing-page">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#1A1A1A]">Billing</h1>
@@ -93,127 +99,137 @@ export default function Billing() {
       </div>
 
       {/* Current Status */}
-      {billingStatus && (
-        <Card className="p-5 border-[#E4E4E7]" data-testid="billing-status-card">
-          <div className="flex items-center justify-between">
+      {billingStatus && billingStatus.plan && (
+        <Card className="p-4 sm:p-5 border-[#E4E4E7]" data-testid="billing-status-card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#F2F0EB] flex items-center justify-center">
                 <Zap className="w-5 h-5 text-[#4A6C58]" strokeWidth={1.5} />
               </div>
               <div>
                 <p className="text-sm font-medium text-[#1A1A1A]">
-                  {currentPlan
-                    ? `${currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan`
-                    : "No Active Plan"}
+                  {billingStatus.plan_info?.name || "No Plan"}
                 </p>
                 <p className="text-xs text-[#A1A1AA]">
                   {billingStatus.scan_count} / {billingStatus.scan_limit} scans used
                 </p>
               </div>
             </div>
-            <Badge
-              variant={billingStatus.billing_status === "active" ? "default" : "secondary"}
-              className={
-                billingStatus.billing_status === "active"
-                  ? "bg-[#3F6212]/10 text-[#3F6212] border-0"
-                  : "bg-[#F2F0EB] text-[#52525B] border-0"
-              }
-              data-testid="billing-status-badge"
-            >
-              {billingStatus.billing_status || "inactive"}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Progress value={scanUsage} className="w-24 h-2 bg-[#F2F0EB] hidden sm:block" />
+              <Badge
+                className={
+                  billingStatus.billing_status === "active"
+                    ? "bg-[#3F6212]/10 text-[#3F6212] border-0"
+                    : "bg-[#F2F0EB] text-[#52525B] border-0"
+                }
+                data-testid="billing-status-badge"
+              >
+                {billingStatus.billing_status || "inactive"}
+              </Badge>
+            </div>
           </div>
         </Card>
       )}
 
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        {Object.entries(plans).map(([id, plan]) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {PLAN_ORDER.filter(id => plans[id]).map((id) => {
+          const plan = plans[id];
           const PlanIcon = PLAN_ICONS[id] || Zap;
           const isCurrentPlan = currentPlan === id;
-          const isPro = id === "professional";
+          const isPopular = id === "professional";
+          const isTrial = id === "trial";
 
           return (
             <Card
               key={id}
-              className={`p-6 border-2 transition-all duration-300 relative overflow-hidden ${
-                isPro
-                  ? "border-[#4A6C58] shadow-[0_12px_24px_rgba(74,108,88,0.15)]"
+              className={`p-4 sm:p-5 border-2 transition-all duration-300 relative overflow-hidden flex flex-col ${
+                isPopular
+                  ? "border-[#4A6C58] shadow-[0_8px_20px_rgba(74,108,88,0.12)]"
                   : "border-[#E4E4E7] hover:border-[#4A6C58]/30"
               }`}
               data-testid={`plan-card-${id}`}
             >
-              {isPro && (
+              {isPopular && (
                 <div className="absolute top-0 right-0">
-                  <Badge className="bg-[#D4A373] text-white border-0 rounded-none rounded-bl-lg text-[10px] px-3 py-1">
+                  <Badge className="bg-[#D4A373] text-white border-0 rounded-none rounded-bl-lg text-[10px] px-2.5 py-1">
                     POPULAR
                   </Badge>
                 </div>
               )}
 
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-2.5 mb-4">
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    isPro ? "bg-[#4A6C58]" : "bg-[#F2F0EB]"
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    isPopular ? "bg-[#4A6C58]" : isTrial ? "bg-[#F2F0EB]" : "bg-[#F2F0EB]"
                   }`}
                 >
                   <PlanIcon
-                    className={`w-5 h-5 ${isPro ? "text-white" : "text-[#4A6C58]"}`}
+                    className={`w-4 h-4 ${isPopular ? "text-white" : "text-[#4A6C58]"}`}
                     strokeWidth={1.5}
                   />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-[#1A1A1A]">{plan.name}</h3>
-                  <p className="text-xs text-[#A1A1AA]">7-day free trial</p>
+                  <h3 className="text-sm font-semibold text-[#1A1A1A]">{plan.name}</h3>
+                  {isTrial && <p className="text-[10px] text-[#D4A373] font-medium">3-day trial</p>}
                 </div>
               </div>
 
-              <div className="flex items-end gap-1 mb-6">
-                <span className="text-4xl font-bold text-[#1A1A1A] font-[Manrope]">
-                  ${plan.price}
-                </span>
-                <span className="text-sm text-[#A1A1AA] mb-1">/month</span>
+              <div className="flex items-end gap-0.5 mb-4">
+                {isTrial ? (
+                  <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">Free</span>
+                ) : (
+                  <>
+                    <span className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] font-[Manrope]">
+                      ${plan.price}
+                    </span>
+                    <span className="text-xs text-[#A1A1AA] mb-1">/mo</span>
+                  </>
+                )}
               </div>
 
-              <ul className="space-y-3 mb-6">
+              <ul className="space-y-2 mb-5 flex-1">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2.5 text-sm text-[#52525B]">
-                    <Check className="w-4 h-4 text-[#4A6C58] flex-shrink-0" strokeWidth={2} />
-                    {feature}
+                  <li key={i} className="flex items-start gap-2 text-xs text-[#52525B]">
+                    <Check className="w-3.5 h-3.5 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
 
               {isCurrentPlan ? (
-                <div className="space-y-2">
+                <div className="space-y-2 mt-auto">
                   <Button
                     disabled
-                    className="w-full bg-[#F2F0EB] text-[#4A6C58] cursor-default"
+                    className="w-full bg-[#F2F0EB] text-[#4A6C58] cursor-default text-xs h-9"
                     data-testid={`plan-current-${id}`}
                   >
                     Current Plan
                   </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={handleCancel}
-                    className="w-full text-[#991B1B] hover:bg-red-50 text-xs"
-                    data-testid={`plan-cancel-${id}`}
-                  >
-                    Cancel Subscription
-                  </Button>
+                  {!isTrial && (
+                    <Button
+                      variant="ghost"
+                      onClick={handleCancel}
+                      className="w-full text-[#991B1B] hover:bg-red-50 text-[10px] h-7"
+                      data-testid={`plan-cancel-${id}`}
+                    >
+                      Cancel
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <Button
                   onClick={() => handleSubscribe(id)}
-                  className={`w-full ${
-                    isPro
+                  className={`w-full mt-auto text-xs h-9 ${
+                    isPopular
                       ? "bg-[#4A6C58] hover:bg-[#3D5A49] text-white"
                       : "bg-white border border-[#4A6C58] text-[#4A6C58] hover:bg-[#F2F0EB]"
                   }`}
                   data-testid={`plan-subscribe-${id}`}
                 >
-                  Subscribe
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" strokeWidth={1.5} />
+                  {isTrial ? "Start Trial" : "Subscribe"}
+                  <ArrowRight className="w-3 h-3 ml-1" strokeWidth={1.5} />
                 </Button>
               )}
             </Card>
@@ -221,12 +237,12 @@ export default function Billing() {
         })}
       </div>
 
-      {/* Info Note */}
-      <Card className="p-4 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="billing-info">
-        <p className="text-xs text-[#A1A1AA] leading-relaxed">
-          All plans include a 7-day free trial. Billing is managed through Shopify's recurring
-          subscription system. Charges appear on your Shopify invoice. Quotas reset monthly.
-          You can upgrade, downgrade, or cancel at any time.
+      {/* Info */}
+      <Card className="p-3 sm:p-4 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="billing-info">
+        <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+          Free trial lasts 3 days with a maximum of 10 scans. Paid plans are billed monthly through
+          Shopify's recurring subscription system. Charges appear on your Shopify invoice.
+          Quotas reset monthly. Upgrade, downgrade, or cancel at any time.
         </p>
       </Card>
     </div>
