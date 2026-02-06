@@ -14,14 +14,10 @@ const PLAN_ICONS = {
   starter: Shield,
   professional: Crown,
   enterprise: Rocket,
-  starter_annual: Shield,
-  professional_annual: Crown,
-  enterprise_annual: Rocket,
   enterprise_plus: Star,
 };
 
-const MONTHLY_PLANS = ["trial", "starter", "professional", "enterprise", "enterprise_plus"];
-const ANNUAL_PLANS = ["trial", "starter_annual", "professional_annual", "enterprise_annual", "enterprise_plus"];
+const ALL_PLANS = ["trial", "starter", "professional", "enterprise", "enterprise_plus"];
 
 export default function Billing() {
   const [plans, setPlans] = useState({});
