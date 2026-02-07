@@ -12,12 +12,63 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PLAN_ICONS = { start: Zap, plus: Crown, growth: Rocket };
 const PLAN_ORDER = ["start", "plus", "growth"];
 
+// Helper function to get shop domain from various sources
+function getShopDomain() {
+  // Try URL search params first (standard way)
+  const urlParams = new URLSearchParams(window.location.search);
+  let shop = urlParams.get("shop");
+  if (shop) return shop;
+  
+  // Try getting from URL hash (sometimes used in embedded apps)
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  shop = hashParams.get("shop");
+  if (shop) return shop;
+  
+  // Try getting from parent URL (when embedded in Shopify iframe)
+  try {
+    const parentUrl = window.location.ancestorOrigins?.[0] || document.referrer;
+    if (parentUrl) {
+      const match = parentUrl.match(/https:\/\/([^.]+\.myshopify\.com)/);
+      if (match) return match[1];
+      // Also try extracting from admin URL pattern
+      const adminMatch = parentUrl.match(/admin\.shopify\.com\/store\/([^/]+)/);
+      if (adminMatch) return `${adminMatch[1]}.myshopify.com`;
+    }
+  } catch (e) {
+    console.log("Could not access parent URL");
+  }
+  
+  // Try localStorage (if saved during install)
+  shop = localStorage.getItem("shopify_shop_domain");
+  if (shop) return shop;
+  
+  // Extract from current hostname if it's a Shopify URL
+  const hostname = window.location.hostname;
+  if (hostname.includes('.myshopify.com')) {
+    return hostname;
+  }
+  
+  return null;
+}
+
 export default function Billing() {
   const [plans, setPlans] = useState({});
   const [billingStatus, setBillingStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [shopDomain, setShopDomain] = useState(null);
+  const [shopError, setShopError] = useState(false);
 
-  const shopDomain = new URLSearchParams(window.location.search).get("shop") || "demo-store.myshopify.com";
+  // Get shop domain on mount
+  useEffect(() => {
+    const shop = getShopDomain();
+    if (shop) {
+      setShopDomain(shop);
+      localStorage.setItem("shopify_shop_domain", shop);
+    } else {
+      setShopError(true);
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
