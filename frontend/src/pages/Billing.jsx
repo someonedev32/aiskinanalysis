@@ -119,6 +119,22 @@ export default function Billing() {
     }
   };
 
+  if (shopError) {
+    return (
+      <div className="space-y-6 animate-fade-in" data-testid="billing-error">
+        <div className="p-6 bg-red-50 border border-red-200 rounded-xl">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Shop Not Found</h2>
+          <p className="text-sm text-red-600 mb-4">
+            Could not detect your shop domain. Please access this page through your Shopify admin panel.
+          </p>
+          <p className="text-xs text-red-500">
+            If you continue to see this error, try reinstalling the app or contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in" data-testid="billing-loading">
