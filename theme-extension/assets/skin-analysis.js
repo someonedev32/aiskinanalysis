@@ -1,185 +1,238 @@
 /**
- * AI Skin Analysis - Theme App Extension JavaScript
- * Handles camera capture and skin analysis via App Proxy
- * 
- * No images are stored - analysis is performed in real-time only.
+ * AI Skin Analysis - Professional Theme Extension JavaScript
+ * Handles camera, analysis API, and results rendering
  */
 
 (function() {
   'use strict';
 
+  // Configuration
   const wrapper = document.getElementById('lumina-skin-analysis');
   if (!wrapper) return;
 
   const PROXY_URL = wrapper.dataset.appProxyUrl;
   const SHOP = wrapper.dataset.shop;
 
-  let videoStream = null;
-
-  // Elements
+  // DOM Elements
   const video = document.getElementById('lumina-video');
   const canvas = document.getElementById('lumina-canvas');
   const placeholder = document.getElementById('lumina-placeholder');
+  const cameraFrame = document.getElementById('lumina-camera-frame');
   const scanOverlay = document.getElementById('lumina-scan-overlay');
+  const faceGuide = document.querySelector('.lumina-face-guide');
+  
   const startBtn = document.getElementById('lumina-start-btn');
   const captureBtn = document.getElementById('lumina-capture-btn');
   const retryBtn = document.getElementById('lumina-retry-btn');
-  const loadingEl = document.getElementById('lumina-loading');
-  const resultsEl = document.getElementById('lumina-results');
+  
   const cameraSection = document.getElementById('lumina-camera-section');
+  const loadingSection = document.getElementById('lumina-loading');
+  const resultsSection = document.getElementById('lumina-results');
+
+  let stream = null;
 
   // Start Camera
   window.luminaStartCamera = async function() {
     try {
-      videoStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       });
-      video.srcObject = videoStream;
+      
+      video.srcObject = stream;
       video.style.display = 'block';
       placeholder.style.display = 'none';
+      cameraFrame.classList.add('active');
+      
+      if (faceGuide) faceGuide.style.display = 'block';
+      
       startBtn.style.display = 'none';
       captureBtn.style.display = 'inline-flex';
+      
     } catch (err) {
-      console.error('Camera access denied:', err);
-      placeholder.innerHTML = '<p style="color: #991B1B;">Camera access denied. Please allow camera permissions and try again.</p>';
+      console.error('Camera error:', err);
+      alert('Unable to access camera. Please ensure camera permissions are granted.');
     }
   };
 
-  // Capture Snapshot
+  // Capture Image
   window.luminaCapture = async function() {
-    if (!video.srcObject) return;
+    if (!stream) return;
 
-    // Show scan animation
+    // Show scanning animation
     scanOverlay.style.display = 'block';
-    captureBtn.style.display = 'none';
+    captureBtn.disabled = true;
+    captureBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> Scanning...';
+    
+    // Wait for scan animation
+    await new Promise(r => setTimeout(r, 1500));
 
     // Capture frame
+    const ctx = canvas.getContext('2d');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
-
-    // Convert to base64 (JPEG for smaller size)
-    const imageBase64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    const base64 = imageData.split(',')[1];
 
     // Stop camera
-    if (videoStream) {
-      videoStream.getTracks().forEach(track => track.stop());
-    }
+    stopCamera();
 
     // Show loading
-    setTimeout(() => {
-      scanOverlay.style.display = 'none';
-      cameraSection.style.display = 'none';
-      loadingEl.style.display = 'flex';
-    }, 1500);
+    cameraSection.style.display = 'none';
+    loadingSection.style.display = 'flex';
 
-    // Send to backend via App Proxy
+    // Send for analysis
     try {
       const response = await fetch(`${PROXY_URL}/analyze?shop=${SHOP}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageBase64 })
+        body: JSON.stringify({ image: base64 })
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Analysis failed');
+        throw new Error(`Analysis failed: ${response.status}`);
       }
 
       const data = await response.json();
-      displayResults(data.result);
-
-    } catch (err) {
-      console.error('Analysis error:', err);
-      loadingEl.style.display = 'none';
-      cameraSection.style.display = 'block';
-      retryBtn.style.display = 'inline-flex';
-      alert('Analysis failed: ' + err.message);
+      
+      if (data.success) {
+        displayResults(data.result, data.products || []);
+      } else {
+        throw new Error(data.detail || 'Analysis failed');
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      alert('Analysis failed: ' + error.message);
+      luminaRetry();
     }
   };
 
-  // Retry
-  window.luminaRetry = function() {
-    retryBtn.style.display = 'none';
-    resultsEl.style.display = 'none';
-    cameraSection.style.display = 'block';
-    startBtn.style.display = 'inline-flex';
-    placeholder.style.display = 'flex';
-    video.style.display = 'none';
-  };
-
   // Display Results
-  function displayResults(result) {
-    loadingEl.style.display = 'none';
-    resultsEl.style.display = 'block';
-    retryBtn.style.display = 'inline-flex';
-    cameraSection.style.display = 'block';
-    startBtn.style.display = 'none';
-    captureBtn.style.display = 'none';
+  function displayResults(result, products) {
+    loadingSection.style.display = 'none';
+    resultsSection.style.display = 'block';
 
     // Score
     const scoreEl = document.getElementById('lumina-score');
-    const scoreColor = result.score >= 70 ? '#3F6212' : result.score >= 40 ? '#854D0E' : '#991B1B';
     scoreEl.innerHTML = `
-      <div style="font-size: 3rem; font-weight: 700; color: ${scoreColor}; line-height: 1;">${result.score}</div>
-      <div style="font-size: 0.75rem; color: #A1A1AA;">out of 100</div>
+      <div class="lumina-score-value">${result.score || 75}</div>
+      <div class="lumina-score-label">out of 100</div>
     `;
 
     // Skin Type
-    document.getElementById('lumina-skin-type').innerHTML = `
-      <h4>Skin Type</h4>
-      <span class="lumina-badge">${result.skin_type}</span>
-      <span class="lumina-severity lumina-severity-${result.severity?.toLowerCase()}">${result.severity}</span>
+    const skinTypeEl = document.querySelector('#lumina-skin-type .lumina-card-content');
+    const severityClass = (result.severity || 'mild').toLowerCase();
+    skinTypeEl.innerHTML = `
+      <span class="lumina-badge">${result.skin_type || 'Normal'}</span>
+      <span class="lumina-severity lumina-severity-${severityClass}">${result.severity || 'Mild'}</span>
     `;
 
     // Concerns
-    const concernsHtml = (result.concerns || []).map(c => `<span class="lumina-tag">${c}</span>`).join('');
-    document.getElementById('lumina-concerns').innerHTML = `
-      <h4>Concerns Identified</h4>
-      <div class="lumina-tags">${concernsHtml}</div>
-    `;
+    const concernsEl = document.querySelector('#lumina-concerns .lumina-card-content');
+    const concerns = result.concerns || [];
+    concernsEl.innerHTML = concerns.map(c => `<span class="lumina-tag">${c}</span>`).join('');
 
     // Ingredients
-    const ingredientsHtml = (result.ingredient_recommendations || []).map(i => `
+    const ingredientsEl = document.querySelector('#lumina-ingredients .lumina-card-content');
+    const ingredients = result.ingredient_recommendations || [];
+    ingredientsEl.innerHTML = ingredients.map(i => `
       <div class="lumina-ingredient">
         <strong>${i.name}</strong>
         <span>${i.benefit}</span>
       </div>
     `).join('');
-    document.getElementById('lumina-ingredients').innerHTML = `
-      <h4>Recommended Ingredients</h4>
-      ${ingredientsHtml}
-    `;
 
     // AM Routine
-    const amHtml = (result.am_routine || []).map(s => `
+    const amEl = document.querySelector('#lumina-am-routine .lumina-card-content');
+    const amRoutine = result.am_routine || [];
+    amEl.innerHTML = amRoutine.map((step, idx) => `
       <div class="lumina-step">
-        <div class="lumina-step-num">${s.step}</div>
-        <div><strong>${s.product_type}</strong><br><span>${s.description}</span></div>
+        <div class="lumina-step-num">${idx + 1}</div>
+        <div class="lumina-step-content">
+          <strong>${step.product_type}</strong>
+          <span>${step.description}</span>
+        </div>
       </div>
     `).join('');
-    document.getElementById('lumina-am-routine').innerHTML = `
-      <h4>Morning Routine (AM)</h4>
-      ${amHtml}
-    `;
 
     // PM Routine
-    const pmHtml = (result.pm_routine || []).map(s => `
+    const pmEl = document.querySelector('#lumina-pm-routine .lumina-card-content');
+    const pmRoutine = result.pm_routine || [];
+    pmEl.innerHTML = pmRoutine.map((step, idx) => `
       <div class="lumina-step">
-        <div class="lumina-step-num">${s.step}</div>
-        <div><strong>${s.product_type}</strong><br><span>${s.description}</span></div>
+        <div class="lumina-step-num">${idx + 1}</div>
+        <div class="lumina-step-content">
+          <strong>${step.product_type}</strong>
+          <span>${step.description}</span>
+        </div>
       </div>
     `).join('');
-    document.getElementById('lumina-pm-routine').innerHTML = `
-      <h4>Evening Routine (PM)</h4>
-      ${pmHtml}
-    `;
 
     // Summary
-    document.getElementById('lumina-summary').innerHTML = `
-      <p>${result.summary}</p>
-    `;
+    const summaryEl = document.querySelector('#lumina-summary p');
+    summaryEl.textContent = result.summary || 'Analysis complete. Follow the recommended routine for best results.';
+
+    // Products (if available)
+    if (products && products.length > 0) {
+      const productsSection = document.getElementById('lumina-products');
+      const productsGrid = productsSection.querySelector('.lumina-products-grid');
+      
+      productsGrid.innerHTML = products.map(p => `
+        <a href="/products/${p.handle}" class="lumina-product-card">
+          <img src="${p.image_url || 'https://via.placeholder.com/200'}" alt="${p.title}" class="lumina-product-image">
+          <div class="lumina-product-title">${p.title}</div>
+          <div class="lumina-product-price">$${p.price}</div>
+        </a>
+      `).join('');
+      
+      productsSection.style.display = 'block';
+    }
+
+    // Show retry button
+    retryBtn.style.display = 'inline-flex';
+    retryBtn.style.margin = '2rem auto 0';
+    retryBtn.style.display = 'flex';
+    resultsSection.appendChild(retryBtn);
   }
+
+  // Retry / Start Over
+  window.luminaRetry = function() {
+    stopCamera();
+    
+    resultsSection.style.display = 'none';
+    loadingSection.style.display = 'none';
+    cameraSection.style.display = 'block';
+    
+    video.style.display = 'none';
+    placeholder.style.display = 'flex';
+    cameraFrame.classList.remove('active');
+    if (faceGuide) faceGuide.style.display = 'none';
+    scanOverlay.style.display = 'none';
+    
+    startBtn.style.display = 'inline-flex';
+    captureBtn.style.display = 'none';
+    captureBtn.disabled = false;
+    captureBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Analyze My Skin';
+    retryBtn.style.display = 'none';
+    
+    // Move retry button back to controls
+    document.querySelector('.lumina-controls').appendChild(retryBtn);
+  };
+
+  // Stop Camera
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+  }
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', stopCamera);
 
 })();
