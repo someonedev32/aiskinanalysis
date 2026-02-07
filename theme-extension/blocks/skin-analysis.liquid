@@ -1,10 +1,6 @@
 {% comment %}
-  Lumina wrapper renamed - AI Skin Analysis uses same CSS class names for backward compat
-  AI Skin Analysis - Theme App Extension
-  Skin Analysis Block for /pages/skin-analysis
-  
-  This block provides an AI-powered skin analysis camera interface
-  that captures a snapshot and sends it to the backend for analysis.
+  AI Skin Analysis - Professional Theme App Extension
+  Modern, responsive design for Desktop & Mobile
 {% endcomment %}
 
 {% schema %}
@@ -22,13 +18,13 @@
       "type": "textarea",
       "id": "subheading",
       "label": "Subheading",
-      "default": "Get a personalized skin assessment in seconds. Our AI analyzes your skin type, concerns, and recommends the perfect routine."
+      "default": "Discover your perfect skincare routine. Our AI analyzes your skin in seconds and provides personalized recommendations."
     },
     {
       "type": "color",
       "id": "brand_color",
       "label": "Primary Color",
-      "default": "#4A6C58"
+      "default": "#2D5A4A"
     },
     {
       "type": "checkbox",
@@ -44,76 +40,175 @@
      class="lumina-wrapper"
      data-app-proxy-url="{{ shop.url }}/apps/skin-analysis"
      data-shop="{{ shop.permanent_domain }}"
-     style="--lumina-brand: {{ block.settings.brand_color }}; --lumina-brand-dark: {{ block.settings.brand_color | color_darken: 15 }};">
+     style="--skin-primary: {{ block.settings.brand_color }}; --skin-primary-light: {{ block.settings.brand_color | color_lighten: 10 }}; --skin-primary-dark: {{ block.settings.brand_color | color_darken: 15 }};">
 
   <!-- Header -->
-  <div class="lumina-header">
+  <header class="lumina-header">
     <h2 class="lumina-title">{{ block.settings.heading }}</h2>
     <p class="lumina-subtitle">{{ block.settings.subheading }}</p>
-  </div>
+  </header>
 
   <!-- Camera Section -->
-  <div id="lumina-camera-section" class="lumina-camera-section">
+  <section id="lumina-camera-section" class="lumina-camera-section">
     <div id="lumina-camera-frame" class="lumina-camera-frame">
       <video id="lumina-video" autoplay playsinline muted class="lumina-video"></video>
       <canvas id="lumina-canvas" style="display:none;"></canvas>
       
-      <!-- Scan Overlay -->
+      <!-- Face Guide -->
+      <div class="lumina-face-guide" style="display:none;"></div>
+      
+      <!-- Scan Animation Overlay -->
       <div id="lumina-scan-overlay" class="lumina-scan-overlay" style="display:none;">
         <div class="lumina-scan-line"></div>
       </div>
       
       <!-- Camera Placeholder -->
       <div id="lumina-placeholder" class="lumina-placeholder">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
-        <p>Tap to start camera</p>
+        <p>Position your face in the frame<br>for best results</p>
       </div>
     </div>
 
     <!-- Controls -->
     <div class="lumina-controls">
       <button id="lumina-start-btn" class="lumina-btn lumina-btn-primary" onclick="luminaStartCamera()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
         Start Camera
       </button>
       <button id="lumina-capture-btn" class="lumina-btn lumina-btn-primary" style="display:none;" onclick="luminaCapture()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
         Analyze My Skin
       </button>
       <button id="lumina-retry-btn" class="lumina-btn lumina-btn-secondary" style="display:none;" onclick="luminaRetry()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
         Try Again
       </button>
     </div>
-  </div>
+  </section>
 
   <!-- Loading State -->
-  <div id="lumina-loading" class="lumina-loading" style="display:none;">
+  <section id="lumina-loading" class="lumina-loading" style="display:none;">
     <div class="lumina-spinner"></div>
     <p>Analyzing your skin...</p>
     <span class="lumina-loading-sub">This takes a few seconds</span>
-  </div>
+  </section>
 
   <!-- Results Section -->
-  <div id="lumina-results" class="lumina-results" style="display:none;">
+  <section id="lumina-results" class="lumina-results" style="display:none;">
     <div class="lumina-results-header">
       <h3>Your Skin Analysis</h3>
-      <div id="lumina-score" class="lumina-score"></div>
+      <div id="lumina-score" class="lumina-score">
+        <div class="lumina-score-value">--</div>
+        <div class="lumina-score-label">out of 100</div>
+      </div>
     </div>
 
-    <div id="lumina-skin-type" class="lumina-info-card"></div>
-    <div id="lumina-concerns" class="lumina-info-card"></div>
-    <div id="lumina-ingredients" class="lumina-info-card"></div>
-    <div id="lumina-am-routine" class="lumina-routine-card"></div>
-    <div id="lumina-pm-routine" class="lumina-routine-card"></div>
-    <div id="lumina-summary" class="lumina-summary"></div>
-  </div>
+    <div class="lumina-cards-grid">
+      <!-- Skin Type Card -->
+      <div id="lumina-skin-type" class="lumina-info-card">
+        <div class="lumina-card-header">
+          <div class="lumina-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="5"/>
+              <path d="M20 21a8 8 0 1 0-16 0"/>
+            </svg>
+          </div>
+          <h4>Skin Type</h4>
+        </div>
+        <div class="lumina-card-content"></div>
+      </div>
+
+      <!-- Concerns Card -->
+      <div id="lumina-concerns" class="lumina-info-card">
+        <div class="lumina-card-header">
+          <div class="lumina-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+            </svg>
+          </div>
+          <h4>Concerns Identified</h4>
+        </div>
+        <div class="lumina-card-content lumina-tags"></div>
+      </div>
+
+      <!-- Ingredients Card -->
+      <div id="lumina-ingredients" class="lumina-info-card full-width">
+        <div class="lumina-card-header">
+          <div class="lumina-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+            </svg>
+          </div>
+          <h4>Recommended Ingredients</h4>
+        </div>
+        <div class="lumina-card-content lumina-ingredients-list"></div>
+      </div>
+
+      <!-- AM Routine -->
+      <div id="lumina-am-routine" class="lumina-routine-card">
+        <div class="lumina-card-header">
+          <div class="lumina-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </div>
+          <h4>Morning Routine (AM)</h4>
+        </div>
+        <div class="lumina-card-content lumina-routine-steps"></div>
+      </div>
+
+      <!-- PM Routine -->
+      <div id="lumina-pm-routine" class="lumina-routine-card">
+        <div class="lumina-card-header">
+          <div class="lumina-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </div>
+          <h4>Evening Routine (PM)</h4>
+        </div>
+        <div class="lumina-card-content lumina-routine-steps"></div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div id="lumina-summary" class="lumina-summary">
+      <p></p>
+    </div>
+
+    <!-- Recommended Products -->
+    <div id="lumina-products" class="lumina-products" style="display:none;">
+      <h4>Recommended Products For You</h4>
+      <div class="lumina-products-grid"></div>
+    </div>
+  </section>
 
   {% if block.settings.show_disclaimer %}
-  <div class="lumina-disclaimer">
+  <footer class="lumina-disclaimer">
     <p>This analysis is for cosmetic purposes only and does not constitute medical advice. 
     No images are stored — analysis is performed in real-time and discarded immediately.</p>
-  </div>
+  </footer>
   {% endif %}
 </div>
 
