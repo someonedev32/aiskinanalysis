@@ -21,13 +21,21 @@ app = FastAPI(title="AI Skin Analysis - Shopify App")
 # Root route - handle Shopify app open
 @app.get("/")
 async def app_root(request: Request):
-    """Handle when Shopify opens the app - redirect to install or admin."""
+    """Handle when Shopify opens the app - redirect to frontend dashboard."""
     params = dict(request.query_params)
     shop = params.get("shop", "")
+    host = params.get("host", "")
     
-    if shop:
-        # Redirect to Shopify admin app page
-        return RedirectResponse(url=f"https://{shop}/admin/apps")
+    # Get frontend URL from environment or use default
+    frontend_url = os.environ.get("FRONTEND_URL", "")
+    
+    if shop and frontend_url:
+        # Redirect to frontend dashboard with shop context
+        return RedirectResponse(url=f"{frontend_url}?shop={shop}&host={host}")
+    elif shop:
+        # Fallback: redirect to Shopify admin with the app open
+        shop_handle = shop.replace(".myshopify.com", "")
+        return RedirectResponse(url=f"https://admin.shopify.com/store/{shop_handle}/apps/ai-skinanalysis")
     
     return {"message": "AI Skin Analysis App", "docs": "/docs"}
 
