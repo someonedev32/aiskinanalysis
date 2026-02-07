@@ -102,9 +102,13 @@ async def callback(request: Request):
     # Cleanup nonce
     await db.oauth_nonces.delete_one({"nonce": state})
 
-    # Redirect to Shopify admin embedded app page with shop context
-    # This ensures the app knows which shop it's dealing with
-    return RedirectResponse(url=f"https://{shop}/admin/apps?shop={shop}")
+    # Create host parameter for App Bridge (base64 encoded)
+    import base64
+    host_value = f"admin.shopify.com/store/{shop.replace('.myshopify.com', '')}"
+    host_encoded = base64.b64encode(host_value.encode()).decode()
+    
+    # Redirect to Shopify admin embedded app page with shop and host context
+    return RedirectResponse(url=f"https://{shop}/admin/apps?shop={shop}&host={host_encoded}")
 
 
 @auth_router.get("/shop/{shop_domain}")
