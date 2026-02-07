@@ -147,7 +147,10 @@ async def confirm_subscription(shop: str, plan: str, charge_id: str = ""):
     )
 
     app_url = os.environ.get('APP_URL', '')
-    return {"success": True, "redirect_url": f"{app_url}/billing?shop={shop}&activated=true"}
+    # Redirect to the frontend billing page
+    frontend_url = os.environ.get('FRONTEND_URL', app_url)
+    redirect_url = f"https://{shop}/admin/apps/ai-skinanalysis?shop={shop}&activated=true"
+    return RedirectResponse(url=redirect_url)
 
 
 @billing_router.get("/status/{shop_domain}")
