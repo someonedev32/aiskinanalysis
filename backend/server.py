@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -16,6 +17,19 @@ db = client[os.environ['DB_NAME']]
 
 # Create the main app
 app = FastAPI(title="AI Skin Analysis - Shopify App")
+
+# Root route - handle Shopify app open
+@app.get("/")
+async def app_root(request: Request):
+    """Handle when Shopify opens the app - redirect to install or admin."""
+    params = dict(request.query_params)
+    shop = params.get("shop", "")
+    
+    if shop:
+        # Redirect to Shopify admin app page
+        return RedirectResponse(url=f"https://{shop}/admin/apps")
+    
+    return {"message": "AI Skin Analysis App", "docs": "/docs"}
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
