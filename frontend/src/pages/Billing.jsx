@@ -71,6 +71,8 @@ export default function Billing() {
   }, []);
 
   useEffect(() => {
+    if (!shopDomain) return;
+    
     const fetchData = async () => {
       try {
         const [plansRes, statusRes] = await Promise.all([
