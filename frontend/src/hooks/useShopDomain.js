@@ -15,19 +15,24 @@ function getShopDomain() {
   if (host) {
     try {
       const decoded = atob(host);
-      // Format: store-name.myshopify.com/admin or admin.shopify.com/store/store-name
-      const storeMatch = decoded.match(/([^/.]+)\.myshopify\.com/);
-      if (storeMatch) {
-        console.log("Got shop from host param:", storeMatch[1]);
-        return `${storeMatch[1]}.myshopify.com`;
-      }
+      console.log("Decoded host:", decoded);
+      // Format: admin.shopify.com/store/store-name or store-name.myshopify.com/admin
+      
+      // Try admin.shopify.com/store/STORE pattern first (new admin)
       const adminMatch = decoded.match(/admin\.shopify\.com\/store\/([^/]+)/);
       if (adminMatch) {
         console.log("Got shop from host param (admin):", adminMatch[1]);
         return `${adminMatch[1]}.myshopify.com`;
       }
+      
+      // Try STORE.myshopify.com pattern
+      const storeMatch = decoded.match(/([^/.]+)\.myshopify\.com/);
+      if (storeMatch) {
+        console.log("Got shop from host param:", storeMatch[1]);
+        return `${storeMatch[1]}.myshopify.com`;
+      }
     } catch (e) {
-      console.log("Failed to decode host param");
+      console.log("Failed to decode host param:", e);
     }
   }
   
@@ -72,6 +77,13 @@ function getShopDomain() {
     return shop;
   }
   
+  // Try sessionStorage
+  shop = sessionStorage.getItem("shopify_shop_domain");
+  if (shop) {
+    console.log("Got shop from sessionStorage:", shop);
+    return shop;
+  }
+  
   // Extract from current hostname if it's a Shopify URL
   const hostname = window.location.hostname;
   if (hostname.includes('.myshopify.com')) {
@@ -91,6 +103,7 @@ export function useShopDomain() {
     if (shop) {
       setShopDomain(shop);
       localStorage.setItem("shopify_shop_domain", shop);
+      sessionStorage.setItem("shopify_shop_domain", shop);
     } else {
       setError(true);
     }
