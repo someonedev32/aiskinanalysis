@@ -102,8 +102,9 @@ async def callback(request: Request):
     # Cleanup nonce
     await db.oauth_nonces.delete_one({"nonce": state})
 
-    # Redirect to Shopify admin embedded app page
-    return RedirectResponse(url=f"https://{shop}/admin/apps")
+    # Redirect to Shopify admin embedded app page with shop context
+    # This ensures the app knows which shop it's dealing with
+    return RedirectResponse(url=f"https://{shop}/admin/apps?shop={shop}")
 
 
 @auth_router.get("/shop/{shop_domain}")
