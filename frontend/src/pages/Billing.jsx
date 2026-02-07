@@ -20,7 +20,7 @@ export default function Billing() {
   const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
 
   useEffect(() => {
-    if (!shopDomain) return;
+    if (shopLoading || !shopDomain) return;
     
     const fetchData = async () => {
       try {
