@@ -22,6 +22,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
+import { useShopDomain } from "@/hooks/useShopDomain";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -29,14 +30,17 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
 
   useEffect(() => {
+    if (shopLoading || !shopDomain) return;
+    
     const fetchData = async () => {
       try {
         // Seed demo data first, then fetch overview
         await axios.get(`${API}/dashboard/demo-data`);
         const res = await axios.get(`${API}/dashboard/overview`, {
-          params: { shop_domain: "demo-store.myshopify.com" },
+          params: { shop_domain: shopDomain },
         });
         setData(res.data);
       } catch (err) {
@@ -46,7 +50,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [shopDomain, shopLoading]);
 
   if (loading) {
     return (
