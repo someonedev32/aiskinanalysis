@@ -37,7 +37,7 @@ export default function Billing() {
       }
     };
     fetchData();
-  }, [shopDomain]);
+  }, [shopDomain, shopLoading]);
 
   const handleSubscribe = async (planId) => {
     try {
