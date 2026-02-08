@@ -40,31 +40,34 @@ PLANS = {
     }
 }
 
-# Extra scan packages (one-time purchase)
+# Extra scan packages (one-time purchase) - Only for Growth plan merchants
 SCAN_PACKAGES = {
-    "pack_500": {
-        "name": "500 Extra Scans",
-        "scans": 500,
-        "price": 15,
-        "price_per_scan": 0.03
-    },
-    "pack_1000": {
-        "name": "1,000 Extra Scans",
-        "scans": 1000,
-        "price": 25,
-        "price_per_scan": 0.025
-    },
-    "pack_2500": {
-        "name": "2,500 Extra Scans",
-        "scans": 2500,
-        "price": 50,
-        "price_per_scan": 0.02
-    },
-    "pack_5000": {
-        "name": "5,000 Extra Scans",
-        "scans": 5000,
-        "price": 85,
+    "pack_10k": {
+        "name": "10,000 Extra Scans",
+        "scans": 10000,
+        "price": 170,
         "price_per_scan": 0.017
+    },
+    "pack_50k": {
+        "name": "50,000 Extra Scans",
+        "scans": 50000,
+        "price": 750,
+        "price_per_scan": 0.015,
+        "savings": "12%"
+    },
+    "pack_100k": {
+        "name": "100,000 Extra Scans",
+        "scans": 100000,
+        "price": 1400,
+        "price_per_scan": 0.014,
+        "savings": "18%"
+    },
+    "pack_1m": {
+        "name": "1,000,000 Extra Scans",
+        "scans": 1000000,
+        "price": 12000,
+        "price_per_scan": 0.012,
+        "savings": "29%"
     }
 }
 
