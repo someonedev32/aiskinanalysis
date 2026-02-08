@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime
 
 class ShopifySkinAppTester:
-    def __init__(self, base_url="https://derma-scan-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://shopify-skin-ai.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
