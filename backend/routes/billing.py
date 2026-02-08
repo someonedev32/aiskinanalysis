@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 import os
 import logging
+import httpx
 from datetime import datetime, timezone
 from utils.shopify_client import create_recurring_charge, get_recurring_charge, activate_recurring_charge
 
@@ -36,6 +37,34 @@ PLANS = {
         "scan_limit": 10000,
         "trial_days": 3,
         "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching"]
+    }
+}
+
+# Extra scan packages (one-time purchase)
+SCAN_PACKAGES = {
+    "pack_500": {
+        "name": "500 Extra Scans",
+        "scans": 500,
+        "price": 15,
+        "price_per_scan": 0.03
+    },
+    "pack_1000": {
+        "name": "1,000 Extra Scans",
+        "scans": 1000,
+        "price": 25,
+        "price_per_scan": 0.025
+    },
+    "pack_2500": {
+        "name": "2,500 Extra Scans",
+        "scans": 2500,
+        "price": 50,
+        "price_per_scan": 0.02
+    },
+    "pack_5000": {
+        "name": "5,000 Extra Scans",
+        "scans": 5000,
+        "price": 85,
+        "price_per_scan": 0.017
     }
 }
 
