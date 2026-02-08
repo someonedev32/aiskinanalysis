@@ -160,16 +160,19 @@ async def proxy_analyze_skin(request: Request):
                             
                 if score > 0:
                     image = product.get("image", {})
-                    variant = product.get("variants", [{}])[0]
+                    variants = product.get("variants", [])
+                    variant = variants[0] if variants else {}
+                    price = variant.get("price", "0")
+                    logger.info(f"Product '{product.get('title')}' - variants: {len(variants)}, price: {price}")
                     products.append({
                         "id": product["id"],
                         "title": product["title"],
                         "handle": product["handle"],
                         "image_url": image.get("src", "") if image else "",
-                        "price": variant.get("price", "0"),
+                        "price": price,
                         "match_score": score
                     })
-                    logger.info(f"Product matched with score {score}: {product.get('title')}")
+                    logger.info(f"Product matched with score {score}: {product.get('title')}, price: {price}")
 
             products.sort(key=lambda x: x["match_score"], reverse=True)
             products = products[:6]
