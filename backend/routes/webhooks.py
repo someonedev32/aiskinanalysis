@@ -1,7 +1,7 @@
 """Webhook Routes with HMAC Verification.
 Handles GDPR mandatory webhooks + billing/lifecycle webhooks.
 """
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Response
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import json
@@ -45,7 +45,84 @@ async def verify_webhook(request: Request) -> dict:
     return parsed_body
 
 
-# === GDPR Mandatory Webhooks ===
+# === UNIFIED WEBHOOK ENDPOINT (Shopify sends all compliance webhooks here) ===
+
+@webhook_router.post("")
+async def unified_webhook_handler(request: Request):
+    """
+    Unified webhook handler - Shopify sends all webhooks to /api/webhooks
+    and uses X-Shopify-Topic header to identify the webhook type.
+    MUST return 401 for invalid HMAC signatures.
+    """
+    # Get raw body for HMAC verification
+    body = await request.body()
+    hmac_header = request.headers.get("X-Shopify-Hmac-SHA256", "")
+    topic = request.headers.get("X-Shopify-Topic", "")
+    shop_domain = request.headers.get("X-Shopify-Shop-Domain", "unknown")
+    
+    logger.info(f"Received webhook: topic={topic}, shop={shop_domain}")
+    
+    # CRITICAL: Verify HMAC signature - return 401 if invalid
+    if not verify_webhook_hmac(body, hmac_header):
+        logger.warning(f"HMAC verification FAILED for topic={topic}, shop={shop_domain}")
+        raise HTTPException(status_code=401, detail="Unauthorized - Invalid HMAC signature")
+    
+    logger.info(f"HMAC verification PASSED for topic={topic}")
+    
+    # Parse body
+    try:
+        parsed_body = json.loads(body) if body else {}
+    except json.JSONDecodeError:
+        parsed_body = {}
+    
+    # Log the webhook
+    await db.webhook_logs.insert_one({
+        "topic": topic,
+        "shop_domain": shop_domain,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "status": "received",
+        "payload_summary": str(parsed_body)[:500]
+    })
+    
+    # Route based on topic
+    if topic == "customers/data_request":
+        customer_id = parsed_body.get("customer", {}).get("id", "")
+        logger.info(f"Processing customers/data_request for shop={shop_domain}, customer={customer_id}")
+        # We don't store customer PII - skin analysis is anonymous
+        return {"status": "ok", "message": "No customer PII stored"}
+    
+    elif topic == "customers/redact":
+        customer_id = parsed_body.get("customer", {}).get("id", "")
+        logger.info(f"Processing customers/redact for shop={shop_domain}, customer={customer_id}")
+        # Delete any stored customer data (we don't store PII by design)
+        await db.webhook_logs.update_one(
+            {"topic": "customers/redact", "shop_domain": shop_domain},
+            {"$set": {"status": "processed"}}
+        )
+        return {"status": "ok"}
+    
+    elif topic == "shop/redact":
+        logger.info(f"Processing shop/redact for shop={shop_domain}")
+        # Delete all shop data
+        await db.shops.delete_one({"shop_domain": shop_domain})
+        await db.scans.delete_many({"shop_domain": shop_domain})
+        await db.subscriptions.delete_many({"shop_domain": shop_domain})
+        return {"status": "ok"}
+    
+    elif topic == "app/uninstalled":
+        logger.info(f"Processing app/uninstalled for shop={shop_domain}")
+        await db.shops.update_one(
+            {"shop_domain": shop_domain},
+            {"$set": {"is_active": False, "uninstalled_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        return {"status": "ok"}
+    
+    else:
+        logger.info(f"Received unhandled webhook topic: {topic}")
+        return {"status": "ok", "message": f"Webhook received: {topic}"}
+
+
+# === GDPR Mandatory Webhooks (Individual endpoints for backwards compatibility) ===
 
 @webhook_router.post("/customers/redact")
 async def customers_redact(request: Request):
