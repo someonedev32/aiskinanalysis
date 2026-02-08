@@ -43,9 +43,13 @@ async def shopify_api_request(shop_domain: str, access_token: str, endpoint: str
             logger.info(f"Shopify API {method} {endpoint}: {response.status_code}")
             
             if response.status_code >= 400:
-                logger.error(f"Shopify API error: {response.status_code} - {response.text}")
+                # Log full error details
+                logger.error(f"Shopify API error: {response.status_code}")
+                logger.error(f"Response body: {response.text}")
+                logger.error(f"Request URL: {url}")
+                logger.error(f"Token prefix: {access_token[:10]}..." if access_token else "No token!")
                 raise httpx.HTTPStatusError(
-                    f"Client error '{response.status_code}' for url '{url}'",
+                    f"Client error '{response.status_code}' for url '{url}': {response.text}",
                     request=response.request,
                     response=response
                 )
