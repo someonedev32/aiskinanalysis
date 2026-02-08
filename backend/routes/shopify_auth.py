@@ -1,11 +1,12 @@
 """Shopify OAuth Authentication Routes."""
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Header
 from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import uuid
 import httpx
 import logging
+import jwt
 from datetime import datetime, timezone
 from utils.hmac_verify import verify_oauth_hmac
 
@@ -109,6 +110,52 @@ async def callback(request: Request):
     
     # Redirect to Shopify admin embedded app page with shop and host context
     return RedirectResponse(url=f"https://{shop}/admin/apps?shop={shop}&host={host_encoded}")
+
+
+@auth_router.post("/verify-session")
+async def verify_session_token(request: Request, authorization: str = Header(None)):
+    """Verify Shopify session token for App Bridge authentication.
+    This endpoint validates the session token sent by App Bridge.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No authorization header")
+    
+    # Extract token from "Bearer <token>" format
+    token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
+    
+    api_secret = os.environ.get('SHOPIFY_API_SECRET', '')
+    
+    try:
+        # Decode the session token (JWT)
+        # Note: In production, verify against Shopify's public key
+        decoded = jwt.decode(
+            token, 
+            api_secret, 
+            algorithms=["HS256"],
+            options={"verify_aud": False}  # Skip audience verification for now
+        )
+        
+        # Extract shop domain from the token
+        iss = decoded.get("iss", "")
+        shop_domain = iss.replace("https://", "").replace("/admin", "")
+        
+        # Verify shop exists in our database
+        shop = await db.shops.find_one({"shop_domain": shop_domain})
+        if not shop:
+            raise HTTPException(status_code=401, detail="Shop not found")
+        
+        return {
+            "valid": True,
+            "shop": shop_domain,
+            "exp": decoded.get("exp"),
+            "sub": decoded.get("sub")
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session token expired")
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid session token: {e}")
+        raise HTTPException(status_code=401, detail="Invalid session token")
 
 
 @auth_router.get("/shop/{shop_domain}")
