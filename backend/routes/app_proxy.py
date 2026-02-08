@@ -113,8 +113,8 @@ async def proxy_analyze_skin(request: Request):
 
     # Fetch matching products from Shopify if collection_id is set
     products = []
-    settings = await db.settings.find_one({"shop_domain": shop}, {"_id": 0})
-    collection_id = settings.get("collection_id", "") if settings else ""
+    # Get collection_id from query params (sent from theme extension)
+    collection_id = params.get("collection_id", "")
     access_token = shop_data.get("access_token", "")
 
     if collection_id and access_token:

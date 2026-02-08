@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +16,6 @@ export default function Settings() {
     shop_domain: shopDomain,
     camera_enabled: true,
     auto_recommend: true,
-    collection_id: "",
     custom_branding: false,
     brand_color: "#4A6C58",
   });
