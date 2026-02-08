@@ -267,12 +267,24 @@ export default function Billing() {
 
               {/* Features */}
               <ul className="space-y-2.5 mb-6 flex-1">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[#52525B]">
-                    <Check className="w-4 h-4 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
-                    <span>{feature}</span>
-                  </li>
-                ))}
+                {plan.features.map((feature, i) => {
+                  const isHighlight = id === "growth" && feature === "Buy extra scans anytime";
+                  return (
+                    <li key={i} className={`flex items-start gap-2 text-sm ${isHighlight ? "text-[#4A6C58] font-medium" : "text-[#52525B]"}`}>
+                      {isHighlight ? (
+                        <Plus className="w-4 h-4 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      ) : (
+                        <Check className="w-4 h-4 text-[#4A6C58] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      )}
+                      <span>{feature}</span>
+                      {isHighlight && (
+                        <Badge className="bg-[#D4A373] text-white border-0 text-[9px] px-1.5 py-0 ml-1">
+                          EXCLUSIVE
+                        </Badge>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
 
               {/* CTA */}
