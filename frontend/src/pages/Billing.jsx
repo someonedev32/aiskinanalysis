@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Zap, ArrowRight, Crown, Rocket } from "lucide-react";
+import { Check, Zap, ArrowRight, Crown, Rocket, Plus, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useShopDomain } from "@/hooks/useShopDomain";
 
@@ -15,6 +15,7 @@ const PLAN_ORDER = ["start", "plus", "growth"];
 
 export default function Billing() {
   const [plans, setPlans] = useState({});
+  const [scanPackages, setScanPackages] = useState({});
   const [billingStatus, setBillingStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
@@ -24,11 +25,13 @@ export default function Billing() {
     
     const fetchData = async () => {
       try {
-        const [plansRes, statusRes] = await Promise.all([
+        const [plansRes, packagesRes, statusRes] = await Promise.all([
           axios.get(`${API}/billing/plans`),
+          axios.get(`${API}/billing/scan-packages`),
           axios.get(`${API}/billing/status/${shopDomain}`).catch(() => null),
         ]);
         setPlans(plansRes.data.plans || {});
+        setScanPackages(packagesRes.data.packages || {});
         if (statusRes) setBillingStatus(statusRes.data);
       } catch (err) {
         console.error("Billing fetch error:", err);
@@ -52,6 +55,22 @@ export default function Billing() {
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || "Failed to create subscription");
+    }
+  };
+
+  const handleBuyScans = async (packageId) => {
+    try {
+      const res = await axios.post(`${API}/billing/buy-scans`, {
+        shop_domain: shopDomain,
+        package_id: packageId,
+      });
+      if (res.data.confirmation_url) {
+        window.open(res.data.confirmation_url, "_blank");
+      } else {
+        toast.success("Purchase created. Confirm in Shopify admin.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Failed to create purchase");
     }
   };
 
@@ -99,6 +118,8 @@ export default function Billing() {
 
   const currentPlan = billingStatus?.plan;
   const scanUsage = billingStatus ? Math.round((billingStatus.scan_count / (billingStatus.scan_limit || 1)) * 100) : 0;
+  const isNearLimit = scanUsage >= 80;
+  const isAtLimit = scanUsage >= 100;
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in" data-testid="billing-page">
