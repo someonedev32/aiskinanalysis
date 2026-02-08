@@ -27,19 +27,33 @@ async def shopify_api_request(shop_domain: str, access_token: str, endpoint: str
     }
 
     async with httpx.AsyncClient() as client:
-        if method == "GET":
-            response = await client.get(url, headers=headers)
-        elif method == "POST":
-            response = await client.post(url, headers=headers, json=data)
-        elif method == "PUT":
-            response = await client.put(url, headers=headers, json=data)
-        elif method == "DELETE":
-            response = await client.delete(url, headers=headers)
-        else:
-            raise ValueError(f"Unsupported method: {method}")
+        try:
+            if method == "GET":
+                response = await client.get(url, headers=headers)
+            elif method == "POST":
+                response = await client.post(url, headers=headers, json=data)
+            elif method == "PUT":
+                response = await client.put(url, headers=headers, json=data)
+            elif method == "DELETE":
+                response = await client.delete(url, headers=headers)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
 
-        response.raise_for_status()
-        return response.json()
+            # Log response for debugging
+            logger.info(f"Shopify API {method} {endpoint}: {response.status_code}")
+            
+            if response.status_code >= 400:
+                logger.error(f"Shopify API error: {response.status_code} - {response.text}")
+                raise httpx.HTTPStatusError(
+                    f"Client error '{response.status_code}' for url '{url}'",
+                    request=response.request,
+                    response=response
+                )
+            
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error for {url}: {e}")
+            raise
 
 
 async def create_recurring_charge(shop_domain: str, access_token: str, plan_name: str, price: float, trial_days: int = 3, return_url: str = ""):
