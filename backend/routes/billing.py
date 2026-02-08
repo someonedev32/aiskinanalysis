@@ -266,6 +266,166 @@ async def add_credits(req: CreditRequest):
     }
 
 
+@billing_router.get("/scan-packages")
+async def get_scan_packages():
+    """Get available extra scan packages."""
+    return {"packages": SCAN_PACKAGES}
+
+
+class BuyScansRequest(BaseModel):
+    shop_domain: str
+    package_id: str
+
+
+@billing_router.post("/buy-scans")
+async def buy_extra_scans(req: BuyScansRequest):
+    """Purchase extra scans - creates a one-time charge in Shopify."""
+    package = SCAN_PACKAGES.get(req.package_id)
+    if not package:
+        raise HTTPException(status_code=400, detail="Invalid package")
+
+    shop = await db.shops.find_one({"shop_domain": req.shop_domain})
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    access_token = shop.get("access_token", "")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Shop not authenticated")
+
+    app_url = os.environ.get('APP_URL', '')
+    return_url = f"{app_url}/api/billing/confirm-scans?shop={req.shop_domain}&package={req.package_id}"
+
+    # Create one-time application charge
+    try:
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(
+                f"https://{req.shop_domain}/admin/api/2024-01/application_charges.json",
+                headers={
+                    "X-Shopify-Access-Token": access_token,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "application_charge": {
+                        "name": package["name"],
+                        "price": package["price"],
+                        "return_url": return_url,
+                        "test": os.environ.get('SHOPIFY_BILLING_TEST', 'false').lower() == 'true'
+                    }
+                }
+            )
+
+            if response.status_code != 201:
+                logger.error(f"Shopify charge error: {response.text}")
+                raise HTTPException(status_code=500, detail="Failed to create charge")
+
+            charge_data = response.json()
+            charge = charge_data.get("application_charge", {})
+
+            # Store pending purchase
+            await db.scan_purchases.insert_one({
+                "shop_domain": req.shop_domain,
+                "package_id": req.package_id,
+                "charge_id": str(charge.get("id", "")),
+                "scans": package["scans"],
+                "price": package["price"],
+                "status": "pending",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+
+            return {
+                "confirmation_url": charge.get("confirmation_url", ""),
+                "charge_id": charge.get("id")
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create scan purchase: {e}")
+        raise HTTPException(status_code=500, detail=f"Billing error: {str(e)}")
+
+
+@billing_router.get("/confirm-scans")
+async def confirm_scan_purchase(shop: str, package: str, charge_id: str = ""):
+    """Confirm extra scans purchase after merchant approval."""
+    shop_data = await db.shops.find_one({"shop_domain": shop})
+    if not shop_data:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    access_token = shop_data.get("access_token", "")
+    package_data = SCAN_PACKAGES.get(package)
+    if not package_data:
+        raise HTTPException(status_code=400, detail="Invalid package")
+
+    # Find the pending purchase
+    purchase = await db.scan_purchases.find_one({
+        "shop_domain": shop,
+        "package_id": package,
+        "status": "pending"
+    })
+
+    if purchase and charge_id:
+        try:
+            # Verify and activate the charge
+            async with httpx.AsyncClient() as http_client:
+                # Get charge status
+                get_response = await http_client.get(
+                    f"https://{shop}/admin/api/2024-01/application_charges/{charge_id}.json",
+                    headers={"X-Shopify-Access-Token": access_token}
+                )
+                
+                if get_response.status_code == 200:
+                    charge = get_response.json().get("application_charge", {})
+                    
+                    if charge.get("status") == "accepted":
+                        # Activate the charge
+                        await http_client.post(
+                            f"https://{shop}/admin/api/2024-01/application_charges/{charge_id}/activate.json",
+                            headers={
+                                "X-Shopify-Access-Token": access_token,
+                                "Content-Type": "application/json"
+                            }
+                        )
+                        
+                        # Add scans to shop's limit
+                        new_limit = shop_data.get("scan_limit", 0) + package_data["scans"]
+                        await db.shops.update_one(
+                            {"shop_domain": shop},
+                            {
+                                "$set": {"scan_limit": new_limit},
+                                "$push": {
+                                    "credit_history": {
+                                        "type": "purchase",
+                                        "package": package,
+                                        "scans": package_data["scans"],
+                                        "price": package_data["price"],
+                                        "added_at": datetime.now(timezone.utc).isoformat(),
+                                        "new_limit": new_limit
+                                    }
+                                }
+                            }
+                        )
+                        
+                        # Update purchase record
+                        await db.scan_purchases.update_one(
+                            {"_id": purchase["_id"]},
+                            {
+                                "$set": {
+                                    "status": "completed",
+                                    "completed_at": datetime.now(timezone.utc).isoformat()
+                                }
+                            }
+                        )
+                        
+                        logger.info(f"Added {package_data['scans']} scans to {shop}")
+
+        except Exception as e:
+            logger.error(f"Failed to activate scan purchase: {e}")
+
+    # Redirect back to billing page
+    redirect_url = f"https://{shop}/admin/apps/ai-skinanalysis?shop={shop}&scans_added=true"
+    return RedirectResponse(url=redirect_url)
+
+
 @billing_router.get("/shops")
 async def list_shops():
     """Admin: List all shops with billing info."""
