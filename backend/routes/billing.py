@@ -308,7 +308,9 @@ class BuyScansRequest(BaseModel):
 
 @billing_router.post("/buy-scans")
 async def buy_extra_scans(req: BuyScansRequest):
-    """Purchase extra scans - creates a one-time charge in Shopify."""
+    """Purchase extra scans - creates a one-time charge in Shopify.
+    Only available for Growth plan merchants.
+    """
     package = SCAN_PACKAGES.get(req.package_id)
     if not package:
         raise HTTPException(status_code=400, detail="Invalid package")
@@ -316,6 +318,13 @@ async def buy_extra_scans(req: BuyScansRequest):
     shop = await db.shops.find_one({"shop_domain": req.shop_domain})
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found")
+
+    # Check if shop is on Growth plan
+    if shop.get("plan") != "growth":
+        raise HTTPException(
+            status_code=403, 
+            detail="Extra scan packages are only available for Growth plan subscribers. Please upgrade to Growth plan first."
+        )
 
     access_token = shop.get("access_token", "")
     if not access_token:
