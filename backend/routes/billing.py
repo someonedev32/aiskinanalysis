@@ -36,7 +36,8 @@ PLANS = {
         "price": 179,
         "scan_limit": 10000,
         "trial_days": 3,
-        "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching"]
+        "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching", "Buy extra scans anytime"],
+        "highlight_feature": "Buy extra scans anytime"
     }
 }
 
