@@ -270,9 +270,35 @@ async def add_credits(req: CreditRequest):
 
 
 @billing_router.get("/scan-packages")
-async def get_scan_packages():
-    """Get available extra scan packages."""
-    return {"packages": SCAN_PACKAGES}
+async def get_scan_packages(shop_domain: str = ""):
+    """Get available extra scan packages. Only available for Growth plan merchants."""
+    # If shop_domain provided, check if they qualify
+    if shop_domain:
+        shop = await db.shops.find_one({"shop_domain": shop_domain})
+        if shop:
+            plan = shop.get("plan", "")
+            scan_count = shop.get("scan_count", 0)
+            scan_limit = shop.get("scan_limit", 0)
+            
+            # Only show packages for Growth plan users who are near/over limit (80%+)
+            if plan != "growth":
+                return {
+                    "packages": {},
+                    "eligible": False,
+                    "message": "Extra scan packages are only available for Growth plan subscribers. Please upgrade to Growth plan first."
+                }
+            
+            usage_percent = (scan_count / scan_limit * 100) if scan_limit > 0 else 0
+            
+            return {
+                "packages": SCAN_PACKAGES,
+                "eligible": True,
+                "current_usage": scan_count,
+                "current_limit": scan_limit,
+                "usage_percent": round(usage_percent, 1)
+            }
+    
+    return {"packages": SCAN_PACKAGES, "eligible": True}
 
 
 class BuyScansRequest(BaseModel):
