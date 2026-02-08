@@ -16,8 +16,6 @@ export default function Settings() {
     shop_domain: shopDomain,
     camera_enabled: true,
     auto_recommend: true,
-    custom_branding: false,
-    brand_color: "#4A6C58",
   });
   const [saving, setSaving] = useState(false);
 
@@ -110,10 +108,10 @@ export default function Settings() {
           <Separator className="bg-[#E4E4E7]" />
 
           <div className="p-4 bg-[#F0FDF4] rounded-lg border border-[#BBF7D0]">
-            <p className="text-xs text-[#166534] font-medium mb-1">Product Collection Setup</p>
+            <p className="text-xs text-[#166534] font-medium mb-1">Product Collection & Appearance</p>
             <p className="text-[11px] text-[#15803D]">
-              Select your product collection directly in <strong>Theme Customize</strong> when adding the Skin Analysis block. 
-              Go to <strong>Online Store → Themes → Customize</strong> and click on the Skin Analysis section to choose your collection.
+              Configure your product collection and brand colors directly in <strong>Theme Customize</strong>. 
+              Go to <strong>Online Store → Themes → Customize</strong> and click on the Skin Analysis section.
             </p>
           </div>
         </div>
@@ -177,51 +175,6 @@ export default function Settings() {
         </div>
       </Card>
 
-      {/* Branding */}
-      <Card className="p-6 border-[#E4E4E7]" data-testid="branding-card">
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Widget Appearance</h3>
-        <p className="text-xs text-[#A1A1AA] mb-5">
-          Customize how the skin analysis looks on your store
-        </p>
-
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm text-[#1A1A1A]">Custom Colors</Label>
-              <p className="text-xs text-[#A1A1AA] mt-0.5">
-                Match the widget to your store's branding
-              </p>
-            </div>
-            <Switch
-              checked={settings.custom_branding}
-              onCheckedChange={(v) => setSettings({ ...settings, custom_branding: v })}
-              data-testid="custom-branding-toggle"
-            />
-          </div>
-
-          {settings.custom_branding && (
-            <div>
-              <Label className="text-xs text-[#52525B]">Brand Color</Label>
-              <div className="flex items-center gap-3 mt-1.5">
-                <input
-                  type="color"
-                  value={settings.brand_color}
-                  onChange={(e) => setSettings({ ...settings, brand_color: e.target.value })}
-                  className="w-10 h-10 rounded-lg border border-[#E4E4E7] cursor-pointer"
-                  data-testid="brand-color-picker"
-                />
-                <Input
-                  value={settings.brand_color}
-                  onChange={(e) => setSettings({ ...settings, brand_color: e.target.value })}
-                  className="w-32 text-sm"
-                  data-testid="brand-color-input"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
-
       {/* How It Works */}
       <Card className="p-5 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="help-card">
         <div className="flex items-start gap-3">
@@ -229,9 +182,10 @@ export default function Settings() {
           <div>
             <h3 className="text-sm font-semibold text-[#1A1A1A]">How to add to your store</h3>
             <ol className="text-xs text-[#52525B] mt-2 space-y-1.5 list-decimal pl-4">
-              <li>Go to <strong>Online Store &gt; Themes &gt; Customize</strong></li>
+              <li>Go to <strong>Online Store → Themes → Customize</strong></li>
               <li>Navigate to the page where you want the skin analysis</li>
-              <li>Click <strong>Add section</strong> &gt; select <strong>AI Skin Analysis</strong></li>
+              <li>Click <strong>Add section</strong> → select <strong>AI Skin Analysis</strong></li>
+              <li>Choose your <strong>Product Collection</strong> and <strong>Brand Color</strong></li>
               <li>Save your theme</li>
             </ol>
           </div>
