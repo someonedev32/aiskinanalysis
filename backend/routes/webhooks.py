@@ -82,7 +82,7 @@ async def shop_redact(request: Request):
     return {"status": "ok"}
 
 
-@webhook_router.post("/customers/data-request")
+@webhook_router.post("/customers/data_request")
 async def customers_data_request(request: Request):
     """GDPR: Customer data request."""
     body = await verify_webhook(request)
