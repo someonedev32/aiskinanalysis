@@ -14,21 +14,21 @@ billing_router = APIRouter()
 client = AsyncIOMotorClient(os.environ['MONGO_URL'])
 db = client[os.environ['DB_NAME']]
 
-# Plan definitions
+# Plan definitions - All plans have the same features, only scan limit differs
 PLANS = {
     "start": {
         "name": "Start",
         "price": 39,
         "scan_limit": 1000,
         "trial_days": 3,
-        "features": ["1,000 analysis/month", "AI skin analysis", "Skin type detection", "AM/PM routines", "Scan history"]
+        "features": ["1,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching"]
     },
     "plus": {
         "name": "Plus",
         "price": 99,
         "scan_limit": 5000,
         "trial_days": 3,
-        "features": ["5,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics"]
+        "features": ["5,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching"]
     },
     "growth": {
         "name": "Growth",
