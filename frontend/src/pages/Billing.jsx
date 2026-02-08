@@ -313,44 +313,91 @@ export default function Billing() {
         })}
       </div>
 
-      {/* Buy Extra Scans Section */}
-      {billingStatus?.plan && (
+      {/* Buy Extra Scans Section - Only for Growth Plan */}
+      {billingStatus?.plan === "growth" && Object.keys(scanPackages).length > 0 && (
         <div className="space-y-4" data-testid="extra-scans-section">
           <div className="flex items-center gap-2">
             <Package className="w-5 h-5 text-[#4A6C58]" strokeWidth={1.5} />
             <h2 className="text-lg font-semibold text-[#1A1A1A]">Need More Scans?</h2>
+            <Badge className="bg-[#4A6C58]/10 text-[#4A6C58] border-0 text-[10px]">
+              Growth Plan Exclusive
+            </Badge>
           </div>
           <p className="text-sm text-[#A1A1AA]">
             Buy extra analysis credits anytime. These are added to your current limit and don't expire.
+            Larger packages offer better value per scan.
           </p>
           
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.entries(scanPackages).map(([id, pkg]) => (
               <Card
                 key={id}
-                className="p-4 border-[#E4E4E7] hover:border-[#4A6C58]/50 transition-all cursor-pointer"
+                className="p-5 border-[#E4E4E7] hover:border-[#4A6C58] hover:shadow-lg transition-all"
                 data-testid={`scan-package-${id}`}
               >
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-[#1A1A1A] font-[Manrope]">
-                    {pkg.scans.toLocaleString()}
+                  {pkg.savings && (
+                    <Badge className="bg-[#D4A373] text-white border-0 text-[10px] mb-2">
+                      SAVE {pkg.savings}
+                    </Badge>
+                  )}
+                  <p className="text-3xl font-bold text-[#1A1A1A] font-[Manrope]">
+                    {pkg.scans >= 1000000 
+                      ? `${(pkg.scans / 1000000).toFixed(0)}M` 
+                      : pkg.scans >= 1000 
+                        ? `${(pkg.scans / 1000).toFixed(0)}K`
+                        : pkg.scans.toLocaleString()
+                    }
                   </p>
-                  <p className="text-xs text-[#A1A1AA] mb-3">extra scans</p>
-                  <p className="text-lg font-semibold text-[#4A6C58] mb-1">${pkg.price}</p>
-                  <p className="text-[10px] text-[#A1A1AA] mb-3">${pkg.price_per_scan}/scan</p>
+                  <p className="text-xs text-[#A1A1AA] mb-4">extra scans</p>
+                  
+                  <p className="text-2xl font-bold text-[#4A6C58] mb-1">
+                    ${pkg.price.toLocaleString()}
+                  </p>
+                  <p className="text-[11px] text-[#A1A1AA] mb-4">
+                    ${pkg.price_per_scan.toFixed(3)} per scan
+                  </p>
+                  
                   <Button
                     onClick={() => handleBuyScans(id)}
-                    size="sm"
-                    className="w-full bg-[#4A6C58] hover:bg-[#3D5A49] text-white h-8 text-xs"
+                    className="w-full bg-[#4A6C58] hover:bg-[#3D5A49] text-white h-9"
                   >
-                    <Plus className="w-3 h-3 mr-1" strokeWidth={2} />
-                    Buy
+                    <Plus className="w-4 h-4 mr-1.5" strokeWidth={2} />
+                    Purchase
                   </Button>
                 </div>
               </Card>
             ))}
           </div>
+          
+          <p className="text-[11px] text-[#A1A1AA] text-center mt-2">
+            All purchases are one-time charges processed through Shopify. Scans are added immediately after purchase confirmation.
+          </p>
         </div>
+      )}
+
+      {/* Upgrade to Growth for Extra Scans */}
+      {billingStatus?.plan && billingStatus.plan !== "growth" && isNearLimit && (
+        <Card className="p-5 border-[#4A6C58]/20 bg-gradient-to-r from-[#4A6C58]/5 to-transparent" data-testid="upgrade-for-scans">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Rocket className="w-5 h-5 text-[#4A6C58]" strokeWidth={1.5} />
+                <h3 className="text-sm font-semibold text-[#1A1A1A]">Need more scans?</h3>
+              </div>
+              <p className="text-xs text-[#52525B]">
+                Upgrade to the <strong>Growth plan</strong> to unlock extra scan packages and scale your business without limits.
+              </p>
+            </div>
+            <Button
+              onClick={() => handleSubscribe("growth")}
+              className="bg-[#4A6C58] hover:bg-[#3D5A49] text-white whitespace-nowrap"
+            >
+              Upgrade to Growth
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" strokeWidth={1.5} />
+            </Button>
+          </div>
+        </Card>
       )}
 
       {/* Info */}
