@@ -162,6 +162,36 @@ export default function Billing() {
         </Card>
       )}
 
+      {/* Warning: Near Limit */}
+      {isNearLimit && !isAtLimit && billingStatus?.plan && (
+        <Card className="p-4 border-[#F59E0B]/30 bg-[#FFFBEB]" data-testid="near-limit-warning">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-[#D97706] flex-shrink-0" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-medium text-[#92400E]">Running low on analysis credits</p>
+              <p className="text-xs text-[#B45309] mt-0.5">
+                You've used {scanUsage}% of your monthly limit. Consider upgrading your plan or buying extra scans.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Warning: At Limit */}
+      {isAtLimit && billingStatus?.plan && (
+        <Card className="p-4 border-[#EF4444]/30 bg-[#FEF2F2]" data-testid="at-limit-warning">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-[#DC2626] flex-shrink-0" strokeWidth={1.5} />
+            <div>
+              <p className="text-sm font-medium text-[#991B1B]">Analysis limit reached!</p>
+              <p className="text-xs text-[#B91C1C] mt-0.5">
+                Your customers can't use skin analysis until you upgrade or buy extra scans.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Trial Banner */}
       <Card className="p-4 border-[#4A6C58]/20 bg-[#4A6C58]/5" data-testid="trial-banner">
         <div className="flex items-center gap-2">
@@ -275,12 +305,53 @@ export default function Billing() {
         })}
       </div>
 
+      {/* Buy Extra Scans Section */}
+      {billingStatus?.plan && (
+        <div className="space-y-4" data-testid="extra-scans-section">
+          <div className="flex items-center gap-2">
+            <Package className="w-5 h-5 text-[#4A6C58]" strokeWidth={1.5} />
+            <h2 className="text-lg font-semibold text-[#1A1A1A]">Need More Scans?</h2>
+          </div>
+          <p className="text-sm text-[#A1A1AA]">
+            Buy extra analysis credits anytime. These are added to your current limit and don't expire.
+          </p>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Object.entries(scanPackages).map(([id, pkg]) => (
+              <Card
+                key={id}
+                className="p-4 border-[#E4E4E7] hover:border-[#4A6C58]/50 transition-all cursor-pointer"
+                data-testid={`scan-package-${id}`}
+              >
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#1A1A1A] font-[Manrope]">
+                    {pkg.scans.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-[#A1A1AA] mb-3">extra scans</p>
+                  <p className="text-lg font-semibold text-[#4A6C58] mb-1">${pkg.price}</p>
+                  <p className="text-[10px] text-[#A1A1AA] mb-3">${pkg.price_per_scan}/scan</p>
+                  <Button
+                    onClick={() => handleBuyScans(id)}
+                    size="sm"
+                    className="w-full bg-[#4A6C58] hover:bg-[#3D5A49] text-white h-8 text-xs"
+                  >
+                    <Plus className="w-3 h-3 mr-1" strokeWidth={2} />
+                    Buy
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Info */}
       <Card className="p-3 sm:p-4 border-[#E4E4E7] bg-[#F9FAFB]" data-testid="billing-info">
         <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
           All plans include a 3-day free trial. Billing is managed through Shopify's recurring
           subscription system. Charges appear on your Shopify invoice.
-          Quotas reset monthly. Upgrade, downgrade, or cancel at any time.
+          Quotas reset monthly. Extra scan purchases don't expire and are added to your limit.
+          Upgrade, downgrade, or cancel at any time.
           Need help? Contact us at support@inovation.app
         </p>
       </Card>
