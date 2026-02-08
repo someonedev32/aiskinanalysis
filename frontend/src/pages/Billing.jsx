@@ -25,14 +25,22 @@ export default function Billing() {
     
     const fetchData = async () => {
       try {
-        const [plansRes, packagesRes, statusRes] = await Promise.all([
+        const [plansRes, statusRes] = await Promise.all([
           axios.get(`${API}/billing/plans`),
-          axios.get(`${API}/billing/scan-packages`),
           axios.get(`${API}/billing/status/${shopDomain}`).catch(() => null),
         ]);
         setPlans(plansRes.data.plans || {});
-        setScanPackages(packagesRes.data.packages || {});
         if (statusRes) setBillingStatus(statusRes.data);
+        
+        // Fetch scan packages only after we know billing status
+        if (statusRes?.data?.plan === "growth") {
+          const packagesRes = await axios.get(`${API}/billing/scan-packages`, {
+            params: { shop_domain: shopDomain }
+          });
+          if (packagesRes.data.eligible) {
+            setScanPackages(packagesRes.data.packages || {});
+          }
+        }
       } catch (err) {
         console.error("Billing fetch error:", err);
       } finally {
