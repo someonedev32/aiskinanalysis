@@ -116,6 +116,8 @@ async def proxy_analyze_skin(request: Request):
     # Get collection_id from query params (sent from theme extension)
     collection_id = params.get("collection_id", "")
     access_token = shop_data.get("access_token", "")
+    
+    logger.info(f"Product matching - collection_id: {collection_id}, has_token: {bool(access_token)}")
 
     if collection_id and access_token:
         try:
@@ -124,6 +126,8 @@ async def proxy_analyze_skin(request: Request):
             skin_tag = f"skin-{skin_type}"
             ingredients = [i["name"].lower().replace(" ", "-") for i in result.get("ingredient_recommendations", [])]
             product_types = [s["product_type"].lower() for s in result.get("am_routine", []) + result.get("pm_routine", [])]
+            
+            logger.info(f"Matching criteria - skin_tag: {skin_tag}, ingredients: {ingredients}, product_types: {product_types}")
 
             # Get products from collection
             collection_products = await shopify_api_request(
@@ -132,9 +136,11 @@ async def proxy_analyze_skin(request: Request):
             )
 
             all_products = collection_products.get("products", [])
+            logger.info(f"Found {len(all_products)} products in collection")
 
             for product in all_products:
-                tags = [t.strip().lower() for t in product.get("tags", "").split(",")]
+                tags = [t.strip().lower() for t in product.get("tags", "").split(",") if t.strip()]
+                logger.info(f"Product '{product.get('title')}' tags: {tags}")
                 score = 0
                 if skin_tag in tags:
                     score += 3
@@ -144,6 +150,14 @@ async def proxy_analyze_skin(request: Request):
                 for pt in product_types:
                     if pt in tags:
                         score += 1
+                        
+                # Also check if any tag contains the product type (more flexible matching)
+                for tag in tags:
+                    for pt in product_types:
+                        if pt in tag or tag in pt:
+                            score += 1
+                            break
+                            
                 if score > 0:
                     image = product.get("image", {})
                     variant = product.get("variants", [{}])[0]
@@ -155,11 +169,17 @@ async def proxy_analyze_skin(request: Request):
                         "price": variant.get("price", "0"),
                         "match_score": score
                     })
+                    logger.info(f"Product matched with score {score}: {product.get('title')}")
 
             products.sort(key=lambda x: x["match_score"], reverse=True)
             products = products[:6]
+            logger.info(f"Final matched products count: {len(products)}")
         except Exception as e:
             logger.warning(f"Product matching failed: {e}")
+            import traceback
+            logger.warning(traceback.format_exc())
+    else:
+        logger.info(f"Product matching skipped - collection_id: '{collection_id}', has_token: {bool(access_token)}")
 
     return {"success": True, "result": result, "products": products}
 
