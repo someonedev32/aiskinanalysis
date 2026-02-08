@@ -129,10 +129,10 @@ async def proxy_analyze_skin(request: Request):
             
             logger.info(f"Matching criteria - skin_tag: {skin_tag}, ingredients: {ingredients}, product_types: {product_types}")
 
-            # Get products from collection
+            # Get products from collection (without fields filter to get full variant data including price)
             collection_products = await shopify_api_request(
                 shop, access_token,
-                f"collections/{collection_id}/products.json?limit=50&fields=id,title,handle,image,tags,variants"
+                f"collections/{collection_id}/products.json?limit=50"
             )
 
             all_products = collection_products.get("products", [])
