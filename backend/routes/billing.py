@@ -7,7 +7,12 @@ import os
 import logging
 import httpx
 from datetime import datetime, timezone
-from utils.shopify_client import create_recurring_charge, get_recurring_charge, activate_recurring_charge
+from utils.graphql_billing import (
+    create_subscription_graphql, 
+    create_one_time_charge_graphql,
+    get_active_subscriptions,
+    cancel_subscription_graphql
+)
 
 logger = logging.getLogger(__name__)
 billing_router = APIRouter()
