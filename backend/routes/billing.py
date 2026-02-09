@@ -164,22 +164,13 @@ async def confirm_subscription(shop: str, plan: str, charge_id: str = ""):
     if not shop_data:
         raise HTTPException(status_code=404, detail="Shop not found")
 
-    access_token = shop_data.get("access_token", "")
     plan_data = PLANS.get(plan)
     if not plan_data:
         raise HTTPException(status_code=400, detail="Invalid plan")
 
-    if charge_id:
-        try:
-            # Verify charge status
-            charge_result = await get_recurring_charge(shop, access_token, charge_id)
-            charge = charge_result.get("recurring_application_charge", {})
-
-            if charge.get("status") == "accepted":
-                await activate_recurring_charge(shop, access_token, charge_id)
-        except Exception as e:
-            logger.error(f"Failed to activate charge: {e}")
-
+    # With GraphQL, the subscription is automatically activated after merchant approval
+    # We just need to update our database
+    
     # Update shop with plan info
     await db.shops.update_one(
         {"shop_domain": shop},
@@ -200,9 +191,9 @@ async def confirm_subscription(shop: str, plan: str, charge_id: str = ""):
         {"$set": {"status": "active", "activated_at": datetime.now(timezone.utc).isoformat()}}
     )
 
-    app_url = os.environ.get('APP_URL', '')
-    # Redirect to the frontend billing page
-    frontend_url = os.environ.get('FRONTEND_URL', app_url)
+    logger.info(f"Subscription confirmed for {shop}: plan={plan}")
+
+    # Redirect back to the app in Shopify admin
     redirect_url = f"https://{shop}/admin/apps/ai-skinanalysis?shop={shop}&activated=true"
     return RedirectResponse(url=redirect_url)
 
