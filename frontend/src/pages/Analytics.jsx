@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/utils/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,8 +29,7 @@ import {
   Cell,
 } from "recharts";
 import { Calendar, Filter } from "lucide-react";
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { useShopDomain } from "@/hooks/useShopDomain";
 
 const PIE_COLORS = ["#4A6C58", "#D4A373", "#7AA2F7", "#9ECE6A", "#BB9AF7"];
 
@@ -40,13 +39,15 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState("25");
 
-  const shopDomain = "demo-store.myshopify.com";
+  const { shopDomain } = useShopDomain();
 
   useEffect(() => {
+    if (!shopDomain) return;
+    
     const fetchData = async () => {
       try {
         const [overviewRes, scansRes] = await Promise.all([
-          axios.get(`${API}/dashboard/overview`, {
+          api.get('/dashboard/overview', {
             params: { shop_domain: shopDomain },
           }),
           axios.get(`${API}/dashboard/scans`, {
