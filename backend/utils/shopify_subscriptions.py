@@ -37,7 +37,7 @@ PLANS = {
         "scan_limit": 10000,
         "trial_days": 3,
         "allows_extra_scans": True,
-        "usage_cap": 5000.0,  # Monthly cap for usage charges ($5000 max)
+        "usage_cap": 15000.0,  # Monthly cap for usage charges ($15,000 to cover 1M package + buffer)
         "usage_terms": "Extra scans beyond 10,000 included",
         "features": ["10,000 analysis/month", "AI skin analysis", "Advanced recommendations", "AM/PM routines", "Scan history", "Usage analytics", "Product matching", "Buy extra scans anytime"]
     }
