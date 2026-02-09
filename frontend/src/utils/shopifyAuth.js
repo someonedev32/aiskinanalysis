@@ -43,8 +43,35 @@ export function isEmbedded() {
   return window.self !== window.top;
 }
 
+// Wait for App Bridge to be ready
+export function waitForAppBridge(timeout = 5000) {
+  return new Promise((resolve, reject) => {
+    if (window.shopify) {
+      resolve(window.shopify);
+      return;
+    }
+    
+    const startTime = Date.now();
+    const checkInterval = setInterval(() => {
+      if (window.shopify) {
+        clearInterval(checkInterval);
+        resolve(window.shopify);
+      } else if (Date.now() - startTime > timeout) {
+        clearInterval(checkInterval);
+        console.log('App Bridge not available after timeout, continuing without it');
+        resolve(null);
+      }
+    }, 100);
+  });
+}
+
 // Get session token from App Bridge
 export async function getSessionToken() {
+  // Wait for App Bridge if in embedded context
+  if (isEmbedded()) {
+    await waitForAppBridge();
+  }
+  
   if (!window.shopify) {
     console.log('App Bridge not available');
     return null;
