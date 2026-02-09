@@ -321,7 +321,7 @@ class BuyScansRequest(BaseModel):
 
 @billing_router.post("/buy-scans")
 async def buy_extra_scans(req: BuyScansRequest):
-    """Purchase extra scans - creates a one-time charge in Shopify.
+    """Purchase extra scans - creates a one-time charge using GraphQL.
     Only available for Growth plan merchants.
     """
     package = SCAN_PACKAGES.get(req.package_id)
@@ -341,58 +341,45 @@ async def buy_extra_scans(req: BuyScansRequest):
 
     access_token = shop.get("access_token", "")
     if not access_token:
-        raise HTTPException(status_code=400, detail="Shop not authenticated")
+        raise HTTPException(status_code=400, detail="Shop not authenticated. Please reinstall the app.")
 
     app_url = os.environ.get('APP_URL', '')
     return_url = f"{app_url}/api/billing/confirm-scans?shop={req.shop_domain}&package={req.package_id}"
 
-    # Create one-time application charge
     try:
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(
-                f"https://{req.shop_domain}/admin/api/2024-01/application_charges.json",
-                headers={
-                    "X-Shopify-Access-Token": access_token,
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "application_charge": {
-                        "name": package["name"],
-                        "price": package["price"],
-                        "return_url": return_url,
-                        "test": os.environ.get('SHOPIFY_BILLING_TEST', 'false').lower() == 'true'
-                    }
-                }
-            )
+        # Use GraphQL one-time charge API
+        result = await create_one_time_charge_graphql(
+            req.shop_domain,
+            access_token,
+            package["name"],
+            float(package["price"]),
+            return_url
+        )
 
-            if response.status_code != 201:
-                logger.error(f"Shopify charge error: {response.text}")
-                raise HTTPException(status_code=500, detail="Failed to create charge")
+        # Store pending purchase
+        await db.scan_purchases.insert_one({
+            "shop_domain": req.shop_domain,
+            "package_id": req.package_id,
+            "purchase_id": result.get("purchase_id", ""),
+            "scans": package["scans"],
+            "price": package["price"],
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
 
-            charge_data = response.json()
-            charge = charge_data.get("application_charge", {})
+        return {
+            "confirmation_url": result["confirmation_url"],
+            "purchase_id": result.get("purchase_id")
+        }
 
-            # Store pending purchase
-            await db.scan_purchases.insert_one({
-                "shop_domain": req.shop_domain,
-                "package_id": req.package_id,
-                "charge_id": str(charge.get("id", "")),
-                "scans": package["scans"],
-                "price": package["price"],
-                "status": "pending",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-
-            return {
-                "confirmation_url": charge.get("confirmation_url", ""),
-                "charge_id": charge.get("id")
-            }
-
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Failed to create scan purchase: {e}")
-        raise HTTPException(status_code=500, detail=f"Billing error: {str(e)}")
+        error_msg = str(e)
+        logger.error(f"Failed to create scan purchase for {req.shop_domain}: {error_msg}")
+        
+        if "403" in error_msg or "Forbidden" in error_msg:
+            raise HTTPException(status_code=403, detail="Access denied. Please reinstall the app.")
+        else:
+            raise HTTPException(status_code=500, detail=f"Billing error: {error_msg}")
 
 
 @billing_router.get("/confirm-scans")
