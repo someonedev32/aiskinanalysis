@@ -30,19 +30,38 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
 
+  // Debug logging
+  console.log('Dashboard render - shopDomain:', shopDomain, 'shopLoading:', shopLoading, 'shopError:', shopError);
+
   useEffect(() => {
-    if (shopLoading || !shopDomain) return;
+    // Wait for shop domain to be determined
+    if (shopLoading) {
+      console.log('Dashboard: Still loading shop domain...');
+      return;
+    }
     
+    // If we have shop domain or not, try to fetch data
     const fetchData = async () => {
       try {
-        // Seed demo data first, then fetch overview
-        await api.get('/dashboard/demo-data');
+        console.log('Dashboard: Fetching data for shop:', shopDomain);
+        
+        // First seed demo data
+        try {
+          await api.get('/dashboard/demo-data');
+          console.log('Dashboard: Demo data seeded');
+        } catch (e) {
+          console.log('Dashboard: Demo data seed skipped:', e.message);
+        }
+        
+        // Then fetch overview
         const res = await api.get('/dashboard/overview', {
-          params: { shop_domain: shopDomain },
+          params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
         });
+        console.log('Dashboard: Data received:', res.data);
         setData(res.data);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
+        console.error("Error details:", err.response?.data || err.message);
       } finally {
         setLoading(false);
       }
