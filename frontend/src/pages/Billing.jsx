@@ -50,7 +50,7 @@ export default function Billing() {
 
   const handleSubscribe = async (planId) => {
     try {
-      const res = await axios.post(`${API}/billing/subscribe`, {
+      const res = await api.post('/billing/subscribe', {
         shop_domain: shopDomain,
         plan_id: planId,
       });
@@ -66,7 +66,7 @@ export default function Billing() {
 
   const handleBuyScans = async (packageId) => {
     try {
-      const res = await axios.post(`${API}/billing/buy-scans`, {
+      const res = await api.post('/billing/buy-scans', {
         shop_domain: shopDomain,
         package_id: packageId,
       });
@@ -82,7 +82,7 @@ export default function Billing() {
 
   const handleCancel = async () => {
     try {
-      await axios.post(`${API}/billing/cancel`, {
+      await api.post('/billing/cancel', {
         shop_domain: shopDomain,
         plan_id: billingStatus?.plan || "",
       });
