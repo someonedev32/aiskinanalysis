@@ -105,11 +105,12 @@ async def callback(request: Request):
 
     # Create host parameter for App Bridge (base64 encoded)
     import base64
-    host_value = f"admin.shopify.com/store/{shop.replace('.myshopify.com', '')}"
+    shop_handle = shop.replace('.myshopify.com', '')
+    host_value = f"admin.shopify.com/store/{shop_handle}"
     host_encoded = base64.b64encode(host_value.encode()).decode()
     
-    # Redirect to Shopify admin embedded app page with shop and host context
-    return RedirectResponse(url=f"https://{shop}/admin/apps?shop={shop}&host={host_encoded}")
+    # Redirect to Shopify admin embedded app page
+    return RedirectResponse(url=f"https://admin.shopify.com/store/{shop_handle}/apps/ai-skinanalysis?shop={shop}&host={host_encoded}")
 
 
 @auth_router.post("/verify-session")
