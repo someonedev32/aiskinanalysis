@@ -1,23 +1,26 @@
 {
-  "en": {
-    "skin_analysis": {
-      "title": "AI Skin Analysis",
-      "subtitle": "Get a personalized skin assessment in seconds.",
-      "start_camera": "Start Camera",
-      "analyze": "Analyze My Skin",
-      "retry": "Try Again",
-      "analyzing": "Analyzing your skin...",
-      "results_title": "Your Skin Analysis",
-      "skin_type": "Skin Type",
-      "concerns": "Concerns Identified",
-      "ingredients": "Recommended Ingredients",
-      "am_routine": "Morning Routine (AM)",
-      "pm_routine": "Evening Routine (PM)",
-      "disclaimer": "This analysis is for cosmetic purposes only and does not constitute medical advice.",
-      "no_images_stored": "No images are stored.",
-      "camera_denied": "Camera access denied. Please allow camera permissions.",
-      "analysis_failed": "Analysis failed. Please try again.",
-      "quota_exceeded": "Scan quota exceeded. Please contact the store."
+  "skin_analysis": {
+    "title": "AI Skin Analysis",
+    "subtitle": "Get a personalized skin assessment in seconds.",
+    "start_camera": "Start Camera",
+    "analyze": "Analyze My Skin",
+    "retry": "Try Again",
+    "analyzing": "Analyzing your skin...",
+    "results_title": "Your Skin Analysis",
+    "skin_type": "Skin Type",
+    "concerns": "Concerns Identified",
+    "ingredients": "Recommended Ingredients",
+    "am_routine": "Morning Routine (AM)",
+    "pm_routine": "Evening Routine (PM)",
+    "disclaimer": "This analysis is for cosmetic purposes only and does not constitute medical advice.",
+    "no_images_stored": "No images are stored.",
+    "camera_denied": "Camera access denied. Please allow camera permissions.",
+    "analysis_failed": "Analysis failed. Please try again.",
+    "quota_exceeded": "Scan quota exceeded. Please contact the store."
+  },
+  "ratings": {
+    "stars": {
+      "label": "Rating"
     }
   }
 }
