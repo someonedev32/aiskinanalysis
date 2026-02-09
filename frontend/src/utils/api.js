@@ -5,14 +5,17 @@
 import axios from 'axios';
 import { getSessionToken, isEmbedded } from './shopifyAuth';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
+
+console.log('API_URL configured as:', API_URL);
 
 // Create axios instance
 const api = axios.create({
   baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 30000
 });
 
 // Request interceptor to add session token
