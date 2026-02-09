@@ -99,15 +99,21 @@ export function useShopDomain() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    console.log('useShopDomain: Starting to detect shop domain...');
     const shop = getShopDomain();
+    console.log('useShopDomain: Detected shop:', shop);
+    
     if (shop) {
       setShopDomain(shop);
       localStorage.setItem("shopify_shop_domain", shop);
       sessionStorage.setItem("shopify_shop_domain", shop);
+      console.log('useShopDomain: Shop domain set to:', shop);
     } else {
+      console.log('useShopDomain: No shop domain found, setting error');
       setError(true);
     }
     setLoading(false);
+    console.log('useShopDomain: Loading set to false');
   }, []);
 
   return { shopDomain, loading, error };
