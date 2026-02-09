@@ -54,9 +54,17 @@ Return ONLY the JSON object, no markdown formatting, no extra text."""
 def get_openai_client():
     """Get OpenAI client with your own API key."""
     api_key = os.environ.get('OPENAI_API_KEY', '')
+    
     if not api_key:
-        logger.error("OPENAI_API_KEY not found in environment")
-        raise HTTPException(status_code=500, detail="OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables.")
+        logger.error("OPENAI_API_KEY not found in environment variables!")
+        raise HTTPException(
+            status_code=500, 
+            detail="OpenAI API key not configured. Please add OPENAI_API_KEY to your Render environment variables."
+        )
+    
+    # Log that we have a key (just first/last chars for security)
+    logger.info(f"Using OpenAI API key: {api_key[:8]}...{api_key[-4:]}")
+    
     return AsyncOpenAI(api_key=api_key)
 
 
