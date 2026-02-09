@@ -94,23 +94,94 @@
         body: JSON.stringify({ image: base64 })
       });
 
-      if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.status}`);
-      }
-
       const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle specific error cases
+        const errorMessage = data.detail || 'Analysis failed';
+        
+        if (response.status === 400) {
+          // No face detected or image quality issue
+          showError(errorMessage, true);
+        } else if (response.status === 429) {
+          // Rate limit or quota exceeded
+          showError('Service is busy. Please wait a moment and try again.', true);
+        } else {
+          // Other errors
+          showError(errorMessage, true);
+        }
+        return;
+      }
       
       if (data.success) {
         displayResults(data.result, data.products || []);
       } else {
-        throw new Error(data.detail || 'Analysis failed');
+        showError(data.detail || 'Analysis failed. Please try again.', true);
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('Analysis failed: ' + error.message);
-      luminaRetry();
+      showError('Connection error. Please check your internet and try again.', true);
     }
   };
+
+  // Show error message with retry option
+  function showError(message, allowRetry) {
+    loadingSection.style.display = 'none';
+    cameraSection.style.display = 'block';
+    
+    // Reset camera UI
+    video.style.display = 'none';
+    placeholder.style.display = 'flex';
+    cameraFrame.classList.remove('active');
+    if (faceGuide) faceGuide.style.display = 'none';
+    scanOverlay.style.display = 'none';
+    
+    startBtn.style.display = 'inline-flex';
+    captureBtn.style.display = 'none';
+    captureBtn.disabled = false;
+    captureBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Analyze My Skin';
+    
+    // Show error in a user-friendly way
+    const errorHtml = `
+      <div class="lumina-error-message" style="
+        background: linear-gradient(135deg, #FFF5F5 0%, #FED7D7 100%);
+        border: 1px solid #FC8181;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px auto;
+        max-width: 400px;
+        text-align: center;
+      ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#E53E3E" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto 12px;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p style="color: #C53030; font-weight: 600; font-size: 16px; margin-bottom: 8px;">Unable to Analyze</p>
+        <p style="color: #742A2A; font-size: 14px; margin-bottom: 16px;">${message}</p>
+        <p style="color: #9B2C2C; font-size: 12px;">Tips for a better scan:</p>
+        <ul style="color: #742A2A; font-size: 12px; text-align: left; padding-left: 20px; margin-top: 8px;">
+          <li>Ensure good lighting on your face</li>
+          <li>Position your face in the center of the frame</li>
+          <li>Remove glasses if possible</li>
+          <li>Hold the camera steady</li>
+        </ul>
+      </div>
+    `;
+    
+    // Remove any existing error message
+    const existingError = document.querySelector('.lumina-error-message');
+    if (existingError) existingError.remove();
+    
+    // Insert error message
+    cameraSection.insertAdjacentHTML('afterbegin', errorHtml);
+    
+    // Auto-remove error after 10 seconds
+    setTimeout(() => {
+      const errorEl = document.querySelector('.lumina-error-message');
+      if (errorEl) errorEl.remove();
+    }, 10000);
+  }
 
   // Display Results
   function displayResults(result, products) {
