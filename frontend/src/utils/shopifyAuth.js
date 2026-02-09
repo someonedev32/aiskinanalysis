@@ -43,9 +43,9 @@ export function isEmbedded() {
   return window.self !== window.top;
 }
 
-// Wait for App Bridge to be ready
-export function waitForAppBridge(timeout = 5000) {
-  return new Promise((resolve, reject) => {
+// Wait for App Bridge to be ready (non-blocking, short timeout)
+export function waitForAppBridge(timeout = 1000) {
+  return new Promise((resolve) => {
     if (window.shopify) {
       resolve(window.shopify);
       return;
@@ -58,22 +58,23 @@ export function waitForAppBridge(timeout = 5000) {
         resolve(window.shopify);
       } else if (Date.now() - startTime > timeout) {
         clearInterval(checkInterval);
-        console.log('App Bridge not available after timeout, continuing without it');
+        // Don't block - just continue without App Bridge
         resolve(null);
       }
-    }, 100);
+    }, 50);
   });
 }
 
-// Get session token from App Bridge
+// Get session token from App Bridge (non-blocking)
 export async function getSessionToken() {
-  // Wait for App Bridge if in embedded context
-  if (isEmbedded()) {
-    await waitForAppBridge();
+  // Quick check - don't wait long
+  if (!window.shopify) {
+    if (isEmbedded()) {
+      await waitForAppBridge(1000);
+    }
   }
   
   if (!window.shopify) {
-    console.log('App Bridge not available');
     return null;
   }
   
@@ -81,20 +82,11 @@ export async function getSessionToken() {
     // The CDN version of App Bridge exposes shopify.idToken()
     if (typeof window.shopify.idToken === 'function') {
       const token = await window.shopify.idToken();
-      console.log('Session token obtained successfully');
       return token;
     }
-    
-    // Alternative: try shopify.getSessionToken if available
-    if (typeof window.shopify.getSessionToken === 'function') {
-      const token = await window.shopify.getSessionToken();
-      return token;
-    }
-    
-    console.log('No session token method available');
     return null;
   } catch (error) {
-    console.error('Error getting session token:', error);
+    console.log('Session token error:', error.message);
     return null;
   }
 }
