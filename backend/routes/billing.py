@@ -96,49 +96,65 @@ async def get_plans():
 
 @billing_router.post("/subscribe")
 async def subscribe(req: SubscribeRequest):
-    """Create a subscription for a shop."""
+    """Create a subscription for a shop using GraphQL Billing API."""
     plan = PLANS.get(req.plan_id)
     if not plan:
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     shop = await db.shops.find_one({"shop_domain": req.shop_domain})
     if not shop:
-        raise HTTPException(status_code=404, detail="Shop not found")
+        raise HTTPException(status_code=404, detail="Shop not found. Please reinstall the app.")
 
     access_token = shop.get("access_token", "")
     if not access_token:
-        raise HTTPException(status_code=400, detail="Shop not authenticated")
+        raise HTTPException(status_code=400, detail="Shop not authenticated. Please reinstall the app.")
+
+    # Log token info for debugging (only prefix)
+    logger.info(f"Creating subscription for {req.shop_domain}, token prefix: {access_token[:10]}...")
 
     app_url = os.environ.get('APP_URL', '')
     return_url = f"{app_url}/api/billing/confirm?shop={req.shop_domain}&plan={req.plan_id}"
 
     try:
-        result = await create_recurring_charge(
+        # Use GraphQL Billing API (recommended by Shopify)
+        result = await create_subscription_graphql(
             req.shop_domain,
             access_token,
             plan["name"],
-            plan["price"],
+            float(plan["price"]),
             plan["trial_days"],
             return_url
         )
-
-        charge = result.get("recurring_application_charge", {})
-        confirmation_url = charge.get("confirmation_url", "")
 
         # Store pending subscription
         await db.subscriptions.insert_one({
             "shop_domain": req.shop_domain,
             "plan_id": req.plan_id,
-            "charge_id": str(charge.get("id", "")),
+            "subscription_id": result.get("subscription_id", ""),
             "status": "pending",
             "created_at": datetime.now(timezone.utc).isoformat()
         })
 
-        return {"confirmation_url": confirmation_url, "charge_id": charge.get("id")}
+        logger.info(f"Subscription created successfully for {req.shop_domain}")
+        return {"confirmation_url": result["confirmation_url"], "subscription_id": result.get("subscription_id")}
 
     except Exception as e:
-        logger.error(f"Failed to create subscription: {e}")
-        raise HTTPException(status_code=500, detail=f"Billing error: {str(e)}")
+        error_msg = str(e)
+        logger.error(f"Failed to create subscription for {req.shop_domain}: {error_msg}")
+        
+        # Provide helpful error messages
+        if "403" in error_msg or "Forbidden" in error_msg:
+            raise HTTPException(
+                status_code=403, 
+                detail="Access denied. Please reinstall the app to refresh permissions. Go to: Apps > AI SkinAnalysis > Uninstall, then reinstall."
+            )
+        elif "401" in error_msg or "Unauthorized" in error_msg:
+            raise HTTPException(
+                status_code=401,
+                detail="Session expired. Please reinstall the app."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"Billing error: {error_msg}")
 
 
 @billing_router.get("/confirm")
