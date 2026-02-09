@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/utils/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +7,6 @@ import { Progress } from "@/components/ui/progress";
 import { Check, Zap, ArrowRight, Crown, Rocket, Plus, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useShopDomain } from "@/hooks/useShopDomain";
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const PLAN_ICONS = { start: Zap, plus: Crown, growth: Rocket };
 const PLAN_ORDER = ["start", "plus", "growth"];
@@ -26,15 +24,15 @@ export default function Billing() {
     const fetchData = async () => {
       try {
         const [plansRes, statusRes] = await Promise.all([
-          axios.get(`${API}/billing/plans`),
-          axios.get(`${API}/billing/status/${shopDomain}`).catch(() => null),
+          api.get('/billing/plans'),
+          api.get(`/billing/status/${shopDomain}`).catch(() => null),
         ]);
         setPlans(plansRes.data.plans || {});
         if (statusRes) setBillingStatus(statusRes.data);
         
         // Fetch scan packages only after we know billing status
         if (statusRes?.data?.plan === "growth") {
-          const packagesRes = await axios.get(`${API}/billing/scan-packages`, {
+          const packagesRes = await api.get('/billing/scan-packages', {
             params: { shop_domain: shopDomain }
           });
           if (packagesRes.data.eligible) {
