@@ -50,7 +50,7 @@ export default function Analytics() {
           api.get('/dashboard/overview', {
             params: { shop_domain: shopDomain },
           }),
-          axios.get(`${API}/dashboard/scans`, {
+          api.get('/dashboard/scans', {
             params: { shop_domain: shopDomain, limit: parseInt(limit) },
           }),
         ]);
@@ -63,7 +63,7 @@ export default function Analytics() {
       }
     };
     fetchData();
-  }, [limit]);
+  }, [limit, shopDomain]);
 
   if (loading) {
     return (
