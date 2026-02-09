@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/utils/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,22 +7,23 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Save, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { useShopDomain } from "@/hooks/useShopDomain";
 
 export default function Settings() {
-  const shopDomain = new URLSearchParams(window.location.search).get("shop") || "demo-store.myshopify.com";
+  const { shopDomain } = useShopDomain();
   const [settings, setSettings] = useState({
-    shop_domain: shopDomain,
+    shop_domain: shopDomain || "demo-store.myshopify.com",
     camera_enabled: true,
     auto_recommend: true,
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!shopDomain) return;
+    
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${API}/dashboard/settings`, {
+        const res = await api.get('/dashboard/settings', {
           params: { shop_domain: shopDomain },
         });
         setSettings(res.data);
@@ -36,7 +37,7 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.post(`${API}/dashboard/settings`, settings);
+      await api.post('/dashboard/settings', settings);
       toast.success("Settings saved successfully");
     } catch (err) {
       toast.error("Failed to save settings");
