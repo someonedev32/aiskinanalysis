@@ -21,21 +21,25 @@ const api = axios.create({
 // Request interceptor to add session token
 api.interceptors.request.use(
   async (config) => {
-    // If we're in embedded Shopify context, add session token
+    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    
+    // If we're in embedded Shopify context, try to add session token
     if (isEmbedded() && window.shopify) {
       try {
         const token = await getSessionToken();
         if (token) {
           config.headers['Authorization'] = `Bearer ${token}`;
-          console.log('Added session token to API request:', config.url);
+          console.log('Added session token to request');
         }
       } catch (error) {
-        console.log('Could not add session token:', error.message);
+        console.log('Could not add session token (non-blocking):', error.message);
+        // Continue without token - backend will still work for public endpoints
       }
     }
     return config;
   },
   (error) => {
+    console.error('API Request Error:', error);
     return Promise.reject(error);
   }
 );
