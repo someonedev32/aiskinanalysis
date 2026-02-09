@@ -19,35 +19,40 @@ function App() {
     initialized: false,
     shop: null,
     host: null,
-    isEmbedded: false
+    isEmbedded: false,
+    error: null
   });
 
   useEffect(() => {
     // Initialize Shopify App Bridge authentication
     async function init() {
+      console.log('Starting app initialization...');
+      console.log('REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
+      
       try {
         const auth = await initializeShopifyAuth();
+        console.log('Auth initialized:', auth);
+        
         setAuthState({
           initialized: true,
           shop: auth.shop,
           host: auth.host,
-          isEmbedded: auth.isEmbedded
+          isEmbedded: auth.isEmbedded,
+          error: null
         });
 
-        // If embedded, periodically refresh session token to generate session data for Shopify
+        // If embedded, periodically refresh session token
         if (auth.isEmbedded && window.shopify) {
-          // Get session token immediately
           const token = await getSessionToken();
           if (token) {
-            console.log('Session token active - Shopify can now verify embedded app checks');
+            console.log('Session token active');
           }
           
-          // Refresh token every 30 seconds to ensure Shopify detects session activity
           const interval = setInterval(async () => {
             try {
               await getSessionToken();
             } catch (e) {
-              console.log('Token refresh skipped');
+              // Silent refresh
             }
           }, 30000);
           
@@ -55,12 +60,28 @@ function App() {
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        setAuthState(prev => ({ ...prev, initialized: true }));
+        setAuthState(prev => ({ 
+          ...prev, 
+          initialized: true,
+          error: error.message 
+        }));
       }
     }
     
     init();
   }, []);
+
+  // Show loading while initializing
+  if (!authState.initialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F6F6F7]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5C6E58] mx-auto mb-4"></div>
+          <p className="text-sm text-[#616161]">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ShopifyAuthContext.Provider value={authState}>
