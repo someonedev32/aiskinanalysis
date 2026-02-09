@@ -69,11 +69,15 @@ def get_openai_client():
 
 
 async def perform_skin_analysis(image_base64: str) -> dict:
-    """Perform AI skin analysis on a base64 encoded image using OpenAI Vision API."""
+    """Perform AI skin analysis on a base64 encoded image using OpenAI Vision API.
+    
+    IMPORTANT: This analyzes HUMAN FACE SKIN only, not general objects.
+    """
     client = get_openai_client()
 
     try:
         logger.info("Starting skin analysis with OpenAI Vision API (gpt-4o)")
+        logger.info(f"Image data length: {len(image_base64)} characters")
         
         response = await client.chat.completions.create(
             model="gpt-4o",
@@ -84,7 +88,7 @@ async def perform_skin_analysis(image_base64: str) -> dict:
                     "content": [
                         {
                             "type": "text", 
-                            "text": "Analyze this image. First check if there is a clear human face visible. If yes, provide skin analysis. If no clear face, return the error response. Return only valid JSON."
+                            "text": "Analyze this image for HUMAN FACE SKIN analysis only. First check if there is a clear human face visible. If yes, provide comprehensive skin analysis. If no clear face is visible (e.g., it's an object, scenery, or face is too far/blurry), return the error response. Return only valid JSON."
                         },
                         {
                             "type": "image_url",
@@ -100,11 +104,15 @@ async def perform_skin_analysis(image_base64: str) -> dict:
         )
 
         response_text = response.choices[0].message.content.strip()
-        logger.info(f"OpenAI response received: {response_text[:200]}...")
+        logger.info(f"OpenAI response received (length: {len(response_text)})")
+        logger.info(f"Response preview: {response_text[:300]}...")
         
         # Clean up response if wrapped in markdown
         if response_text.startswith("```"):
-            response_text = response_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            # Handle ```json or just ```
+            first_line_end = response_text.find("\n")
+            response_text = response_text[first_line_end+1:].rsplit("```", 1)[0].strip()
+            logger.info(f"Cleaned response: {response_text[:200]}...")
 
         result = json.loads(response_text)
         
@@ -122,23 +130,25 @@ async def perform_skin_analysis(image_base64: str) -> dict:
     except HTTPException:
         raise
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse AI response: {e}")
+        logger.error(f"Failed to parse AI response as JSON: {e}")
+        logger.error(f"Raw response that failed to parse: {response_text[:500] if 'response_text' in dir() else 'N/A'}")
         raise HTTPException(status_code=500, detail="Failed to parse analysis results. Please try again.")
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Skin analysis error: {error_msg}")
+        logger.error(f"Full exception: {repr(e)}")
         
         # Check for specific OpenAI errors
         if "invalid_api_key" in error_msg.lower() or "authentication" in error_msg.lower() or "Incorrect API key" in error_msg:
-            raise HTTPException(status_code=500, detail="Invalid API key. Please check your OpenAI API key configuration.")
+            raise HTTPException(status_code=500, detail="Invalid OpenAI API key. Please check your OPENAI_API_KEY in Render environment variables.")
         elif "content_policy" in error_msg.lower() or "safety" in error_msg.lower():
             raise HTTPException(status_code=400, detail="Image could not be analyzed. Please ensure your photo shows only your face clearly.")
         elif "rate_limit" in error_msg.lower():
-            raise HTTPException(status_code=429, detail="Service is busy. Please try again in a moment.")
+            raise HTTPException(status_code=429, detail="OpenAI rate limit reached. Please try again in a moment.")
         elif "insufficient_quota" in error_msg.lower() or "billing" in error_msg.lower():
-            raise HTTPException(status_code=429, detail="API quota exceeded. Please check your OpenAI billing.")
+            raise HTTPException(status_code=429, detail="OpenAI API quota exceeded. Please check your OpenAI billing at platform.openai.com")
         else:
-            raise HTTPException(status_code=500, detail="Analysis failed. Please try again with a clearer photo.")
+            raise HTTPException(status_code=500, detail=f"Analysis failed: {error_msg[:100]}")
 
 
 class AnalyzeRequest(BaseModel):
