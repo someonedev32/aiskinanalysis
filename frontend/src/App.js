@@ -40,26 +40,30 @@ function App() {
           isEmbedded: auth.isEmbedded,
           error: null
         });
+        
+        console.log('Auth state updated, app should render now');
 
-        // If embedded, periodically refresh session token
+        // Session token refresh happens in background - don't await/block
         if (auth.isEmbedded && window.shopify) {
-          const token = await getSessionToken();
-          if (token) {
-            console.log('Session token active');
-          }
-          
-          const interval = setInterval(async () => {
-            try {
-              await getSessionToken();
-            } catch (e) {
-              // Silent refresh
+          // Non-blocking token refresh
+          getSessionToken().then(token => {
+            if (token) {
+              console.log('Initial session token confirmed active');
             }
+          }).catch(e => {
+            console.log('Session token refresh error (non-blocking):', e.message);
+          });
+          
+          // Periodic refresh in background
+          const interval = setInterval(() => {
+            getSessionToken().catch(() => {});
           }, 30000);
           
           return () => clearInterval(interval);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        // Still set initialized to true so app renders
         setAuthState(prev => ({ 
           ...prev, 
           initialized: true,
