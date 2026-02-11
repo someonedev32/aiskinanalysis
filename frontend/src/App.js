@@ -9,7 +9,7 @@ import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
-import { initializeShopifyAuth, getSessionToken, isEmbedded } from "@/utils/shopifyAuth";
+import { getShopDomain, getHost, isEmbedded, getSessionToken } from "@/utils/shopifyAuth";
 
 // Context for Shopify authentication
 export const ShopifyAuthContext = createContext(null);
@@ -24,55 +24,58 @@ function App() {
   });
 
   useEffect(() => {
-    // Initialize Shopify App Bridge authentication
-    async function init() {
-      console.log('Starting app initialization...');
-      console.log('REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
-      
+    // Simple initialization - don't wait for async operations
+    console.log('[App] Starting initialization...');
+    
+    const shop = getShopDomain();
+    const host = getHost();
+    const embedded = isEmbedded();
+    
+    console.log('[App] Auth info:', { shop, host, embedded });
+    
+    // Store shop domain
+    if (shop) {
       try {
-        const auth = await initializeShopifyAuth();
-        console.log('Auth initialized:', auth);
-        
-        setAuthState({
-          initialized: true,
-          shop: auth.shop,
-          host: auth.host,
-          isEmbedded: auth.isEmbedded,
-          error: null
-        });
-        
-        console.log('Auth state updated, app should render now');
-
-        // Session token refresh happens in background - don't await/block
-        if (auth.isEmbedded && window.shopify) {
-          // Non-blocking token refresh
-          getSessionToken().then(token => {
-            if (token) {
-              console.log('Initial session token confirmed active');
-            }
-          }).catch(e => {
-            console.log('Session token refresh error (non-blocking):', e.message);
-          });
-          
-          // Periodic refresh in background
-          const interval = setInterval(() => {
-            getSessionToken().catch(() => {});
-          }, 30000);
-          
-          return () => clearInterval(interval);
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        // Still set initialized to true so app renders
-        setAuthState(prev => ({ 
-          ...prev, 
-          initialized: true,
-          error: error.message 
-        }));
+        localStorage.setItem('shopify_shop_domain', shop);
+        sessionStorage.setItem('shopify_shop_domain', shop);
+      } catch (e) {
+        // Ignore storage errors
       }
     }
     
-    init();
+    // Set initialized immediately - don't wait for App Bridge
+    setAuthState({
+      initialized: true,
+      shop,
+      host,
+      isEmbedded: embedded,
+      error: null
+    });
+    
+    console.log('[App] Auth state set, app will render now');
+    
+    // Get session token in background (non-blocking)
+    if (embedded) {
+      console.log('[App] Getting session token in background...');
+      
+      // Wait a bit for App Bridge to be ready
+      setTimeout(() => {
+        getSessionToken().then(token => {
+          if (token) {
+            console.log('[App] Session token active');
+          }
+        }).catch(e => {
+          console.log('[App] Session token error:', e.message);
+        });
+      }, 1000);
+      
+      // Periodic refresh
+      const interval = setInterval(() => {
+        getSessionToken().catch(() => {});
+      }, 30000);
+      
+      return () => clearInterval(interval);
+    }
   }, []);
 
   // Show loading while initializing
