@@ -57,7 +57,16 @@ export default function Billing() {
         plan_id: planId,
       });
       if (res.data.confirmation_url) {
-        window.location.href = res.data.confirmation_url;
+        // Use App Bridge redirect for embedded apps
+        if (window.shopify && window.shopify.idToken) {
+          // We're in embedded context - use App Bridge
+          const url = new URL(res.data.confirmation_url);
+          // For Shopify billing URLs, we need to redirect the top frame
+          window.top.location.href = res.data.confirmation_url;
+        } else {
+          // Not embedded, regular redirect
+          window.location.href = res.data.confirmation_url;
+        }
       } else {
         toast.success("Subscription created. Confirm in Shopify admin.");
       }
