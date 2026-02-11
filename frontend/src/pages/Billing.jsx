@@ -57,22 +57,31 @@ export default function Billing() {
         plan_id: planId,
       });
       if (res.data.confirmation_url) {
-        // Use Shopify's open method for App Bridge
-        if (window.shopify && typeof window.shopify.idToken === 'function') {
-          // We're in embedded context - use App Bridge redirect
-          // The open() method handles billing redirects properly
+        // For billing URLs in embedded apps, we need to redirect the top-level window
+        // This is the standard approach for Shopify billing confirmation
+        const confirmationUrl = res.data.confirmation_url;
+        
+        // Check if we're in an iframe (embedded)
+        const isEmbedded = window.self !== window.top;
+        
+        if (isEmbedded) {
+          // Method 1: Try using Shopify's redirect (if available)
+          if (window.shopify && typeof window.shopify.loading === 'function') {
+            window.shopify.loading(true);
+          }
+          
+          // For billing, we MUST redirect the top window
+          // Shopify billing pages can't be shown in iframes
           try {
-            await window.shopify.open({
-              url: res.data.confirmation_url,
-            });
+            window.top.location.href = confirmationUrl;
           } catch (e) {
-            console.log('App Bridge open failed, using fallback:', e.message);
-            // Fallback: try window.open or top navigation
-            window.open(res.data.confirmation_url, '_top');
+            // If blocked by same-origin policy, try opening in new window
+            console.log('Top redirect blocked, opening new window');
+            window.open(confirmationUrl, '_blank');
           }
         } else {
           // Not embedded, regular redirect
-          window.location.href = res.data.confirmation_url;
+          window.location.href = confirmationUrl;
         }
       } else {
         toast.success("Subscription created. Confirm in Shopify admin.");
