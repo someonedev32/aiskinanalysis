@@ -57,12 +57,19 @@ export default function Billing() {
         plan_id: planId,
       });
       if (res.data.confirmation_url) {
-        // Use App Bridge redirect for embedded apps
-        if (window.shopify && window.shopify.idToken) {
-          // We're in embedded context - use App Bridge
-          const url = new URL(res.data.confirmation_url);
-          // For Shopify billing URLs, we need to redirect the top frame
-          window.top.location.href = res.data.confirmation_url;
+        // Use Shopify's open method for App Bridge
+        if (window.shopify && typeof window.shopify.idToken === 'function') {
+          // We're in embedded context - use App Bridge redirect
+          // The open() method handles billing redirects properly
+          try {
+            await window.shopify.open({
+              url: res.data.confirmation_url,
+            });
+          } catch (e) {
+            console.log('App Bridge open failed, using fallback:', e.message);
+            // Fallback: try window.open or top navigation
+            window.open(res.data.confirmation_url, '_top');
+          }
         } else {
           // Not embedded, regular redirect
           window.location.href = res.data.confirmation_url;
