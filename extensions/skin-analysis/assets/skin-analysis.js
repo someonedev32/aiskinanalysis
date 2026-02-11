@@ -12,6 +12,7 @@
 
   const PROXY_URL = wrapper.dataset.appProxyUrl;
   const SHOP = wrapper.dataset.shop;
+  const COLLECTION_ID = wrapper.dataset.collectionId || '';
 
   // DOM Elements
   const video = document.getElementById('lumina-video');
@@ -86,9 +87,15 @@
     cameraSection.style.display = 'none';
     loadingSection.style.display = 'flex';
 
+    // Build URL with collection_id if available
+    let analyzeUrl = `${PROXY_URL}/analyze?shop=${SHOP}`;
+    if (COLLECTION_ID) {
+      analyzeUrl += `&collection_id=${COLLECTION_ID}`;
+    }
+
     // Send for analysis
     try {
-      const response = await fetch(`${PROXY_URL}/analyze?shop=${SHOP}`, {
+      const response = await fetch(analyzeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64 })
@@ -115,8 +122,11 @@
       
       if (data.success) {
         displayResults(data.result, data.products || []);
+      } else if (data.error === 'no_face') {
+        // No face detected - show friendly message with retry
+        showError(data.message || 'No clear face detected. Please ensure your face is well-lit, centered, and clearly visible.', true);
       } else {
-        showError(data.detail || 'Analysis failed. Please try again.', true);
+        showError(data.detail || data.message || 'Analysis failed. Please try again.', true);
       }
     } catch (error) {
       console.error('Analysis error:', error);
