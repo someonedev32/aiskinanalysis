@@ -42,18 +42,11 @@ export default function Dashboard() {
     
     // If we have shop domain or not, try to fetch data
     const fetchData = async () => {
+      console.log('Dashboard: Starting fetchData for shop:', shopDomain);
+      
       try {
-        console.log('Dashboard: Fetching data for shop:', shopDomain);
-        
-        // First seed demo data
-        try {
-          await api.get('/dashboard/demo-data');
-          console.log('Dashboard: Demo data seeded');
-        } catch (e) {
-          console.log('Dashboard: Demo data seed skipped:', e.message);
-        }
-        
-        // Then fetch overview
+        // Fetch overview data directly (skip demo-data seeding to avoid delays)
+        console.log('Dashboard: Calling /dashboard/overview API...');
         const res = await api.get('/dashboard/overview', {
           params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
         });
@@ -61,11 +54,24 @@ export default function Dashboard() {
         setData(res.data);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
-        console.error("Error details:", err.response?.data || err.message);
+        console.error("Error response:", err.response?.status, err.response?.data);
+        console.error("Error message:", err.message);
+        // Set empty data to stop showing loading state
+        setData({
+          total_shops: 0,
+          active_shops: 0,
+          total_scans: 0,
+          scans_today: 0,
+          chart_data: [],
+          skin_type_distribution: [],
+          shop: null
+        });
       } finally {
+        console.log('Dashboard: Setting loading to false');
         setLoading(false);
       }
     };
+    
     fetchData();
   }, [shopDomain, shopLoading]);
 
