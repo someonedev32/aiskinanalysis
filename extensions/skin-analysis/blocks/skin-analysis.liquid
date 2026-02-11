@@ -27,6 +27,12 @@
       "default": "#2D5A4A"
     },
     {
+      "type": "collection",
+      "id": "product_collection",
+      "label": "Product Collection",
+      "info": "Select a collection of skincare products to recommend"
+    },
+    {
       "type": "checkbox",
       "id": "show_disclaimer",
       "label": "Show Disclaimer",
@@ -41,6 +47,10 @@
 {%- assign primary_color = block.settings.brand_color | default: '#2D5A4A' -%}
 {%- assign primary_light = primary_color | color_lighten: 15 -%}
 {%- assign primary_dark = primary_color | color_darken: 15 -%}
+{%- assign collection_id = '' -%}
+{%- if block.settings.product_collection -%}
+  {%- assign collection_id = block.settings.product_collection.id -%}
+{%- endif -%}
 
 <style>
   #lumina-skin-analysis {
@@ -49,32 +59,70 @@
     --skin-primary-dark: {{ primary_dark }};
   }
   
-  .lumina-btn-primary {
+  /* Override all button styles with specific selectors */
+  #lumina-skin-analysis .lumina-btn-primary,
+  #lumina-skin-analysis button.lumina-btn-primary,
+  .lumina-wrapper .lumina-btn-primary {
     background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important;
     color: #fff !important;
-    box-shadow: 0 4px 14px {{ primary_color | color_modify: 'alpha', 0.35 }};
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25) !important;
   }
-  .lumina-btn-primary:hover {
-    box-shadow: 0 6px 20px {{ primary_color | color_modify: 'alpha', 0.45 }};
+  
+  #lumina-skin-analysis .lumina-btn-primary:hover,
+  #lumina-skin-analysis button.lumina-btn-primary:hover,
+  .lumina-wrapper .lumina-btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35) !important;
+    filter: brightness(1.05);
   }
-  .lumina-score-value { color: {{ primary_color }} !important; }
-  .lumina-badge { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
-  .lumina-card-icon { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
-  .lumina-step-num { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
-  .lumina-product-price { color: {{ primary_color }} !important; }
-  .lumina-spinner { border-top-color: {{ primary_color }} !important; }
-  .lumina-title {
-    background: linear-gradient(135deg, {{ primary_color }} 0%, {{ primary_light }} 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  
+  #lumina-skin-analysis .lumina-score-value { color: {{ primary_color }} !important; }
+  #lumina-skin-analysis .lumina-badge { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; color: #fff !important; }
+  #lumina-skin-analysis .lumina-card-icon { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
+  #lumina-skin-analysis .lumina-step-num { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
+  #lumina-skin-analysis .lumina-product-price { color: {{ primary_color }} !important; }
+  #lumina-skin-analysis .lumina-spinner { border-top-color: {{ primary_color }} !important; }
+  
+  #lumina-skin-analysis .lumina-title,
+  .lumina-wrapper .lumina-title {
+    background: linear-gradient(135deg, {{ primary_color }} 0%, {{ primary_light }} 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+  }
+  
+  /* Scan line animation with custom color */
+  #lumina-skin-analysis .lumina-scan-line {
+    background: linear-gradient(90deg, transparent 0%, {{ primary_color }} 20%, {{ primary_light }} 50%, {{ primary_color }} 80%, transparent 100%) !important;
+    box-shadow: 0 0 20px {{ primary_color }}, 0 0 40px {{ primary_color }} !important;
+  }
+  
+  /* Face guide with custom color */
+  #lumina-skin-analysis .lumina-face-guide {
+    border-color: {{ primary_color }}50 !important;
+  }
+  
+  /* Active camera frame with custom color */
+  #lumina-skin-analysis .lumina-camera-frame.active {
+    border-color: {{ primary_color }} !important;
+  }
+  
+  /* Product card hover */
+  #lumina-skin-analysis .lumina-product-card:hover {
+    border-color: {{ primary_color }} !important;
+  }
+  
+  /* Tag hover */
+  #lumina-skin-analysis .lumina-tag:hover {
+    border-color: {{ primary_color }} !important;
+    color: {{ primary_color }} !important;
   }
 </style>
 
 <div id="lumina-skin-analysis"
      class="lumina-wrapper"
      data-app-proxy-url="{{ shop.url }}/apps/skin-analysis"
-     data-shop="{{ shop.permanent_domain }}">
+     data-shop="{{ shop.permanent_domain }}"
+     data-collection-id="{{ collection_id }}">
 
   <header class="lumina-header">
     <h2 class="lumina-title">{{ block.settings.heading }}</h2>
