@@ -1,0 +1,5 @@
+api_version = "2025-04"
+type = "theme_app_extension"
+name = "AI Skin Analysis"
+handle = "skin-analysis"
+uid = "78b983c4-e0c0-7a05-56e7-097b3f9aecfdb0d4a735"

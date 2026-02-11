@@ -1,0 +1,21 @@
+client_id = "92a7db21219834a47df3e9caa9318972"
+name = "AI SkinAnalysis"
+application_url = "https://aiskinanalysis.onrender.com"
+embedded = true
+
+[access_scopes]
+scopes = "read_products,write_products,read_themes,write_themes"
+
+[auth]
+redirect_urls = ["https://aiskinanalysis.onrender.com/api/shopify/callback"]
+
+[webhooks]
+api_version = "2025-04"
+
+[app_proxy]
+url = "https://aiskinanalysis.onrender.com/api/proxy"
+subpath = "skin-analysis"
+prefix = "apps"
+
+[pos]
+embedded = false
