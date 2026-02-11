@@ -7,7 +7,18 @@
         <meta name="description" content="AI Skin Analysis - Shopify App" />
         
         <!-- Shopify App Bridge - Required for Built for Shopify status -->
-        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+        <!-- API Key is set dynamically based on URL params, or use default -->
+        <script>
+            // Get API key from URL or use default
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiKey = urlParams.get('api_key') || '92a7db21219834a47df3e9caa9318972';
+            
+            // Create App Bridge script with data-api-key attribute
+            const appBridgeScript = document.createElement('script');
+            appBridgeScript.src = 'https://cdn.shopify.com/shopifycloud/app-bridge.js';
+            appBridgeScript.setAttribute('data-api-key', apiKey);
+            document.head.appendChild(appBridgeScript);
+        </script>
         
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
