@@ -5,7 +5,7 @@
  * IMPORTANT: Session token authentication is REQUIRED for Shopify App Store approval
  */
 import axios from 'axios';
-import { getSessionToken, isEmbedded } from './shopifyAuth';
+import { isEmbedded } from './shopifyAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
 
