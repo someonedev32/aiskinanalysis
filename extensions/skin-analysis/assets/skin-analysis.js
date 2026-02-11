@@ -313,6 +313,67 @@
     document.querySelector('.lumina-controls').appendChild(retryBtn);
   };
 
+  // Add to Cart function
+  window.luminaAddToCart = async function(button, handle, variantId) {
+    const card = button.closest('.lumina-product-card');
+    button.disabled = true;
+    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;animation:luminaSpin 1s linear infinite;"><circle cx="12" cy="12" r="10"/></svg> Adding...';
+    
+    try {
+      // If no variant ID, fetch it from product
+      if (!variantId) {
+        const productResponse = await fetch(`/products/${handle}.js`);
+        const productData = await productResponse.json();
+        variantId = productData.variants[0].id;
+      }
+      
+      // Add to cart
+      const response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: variantId,
+          quantity: 1
+        })
+      });
+      
+      if (response.ok) {
+        // Success - change to View Cart button
+        button.classList.add('lumina-view-cart-btn');
+        button.classList.remove('lumina-add-to-cart-btn');
+        button.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          View Cart
+        `;
+        button.disabled = false;
+        button.onclick = function() { window.location.href = '/cart'; };
+        
+        // Update cart count in header if exists
+        const cartCountEl = document.querySelector('.cart-count, .cart-item-count, [data-cart-count]');
+        if (cartCountEl) {
+          const currentCount = parseInt(cartCountEl.textContent) || 0;
+          cartCountEl.textContent = currentCount + 1;
+        }
+      } else {
+        throw new Error('Failed to add to cart');
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      button.disabled = false;
+      button.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        Add to Cart
+      `;
+      // Fallback: open product page
+      window.location.href = `/products/${handle}`;
+    }
+  };
+
   // Stop Camera
   function stopCamera() {
     if (stream) {
