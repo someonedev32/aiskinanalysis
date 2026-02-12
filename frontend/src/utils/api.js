@@ -79,12 +79,12 @@ const getToken = async () => {
     return cachedToken;
   }
   
-  // If initial acquisition is in progress, wait for it (max 3 seconds)
+  // If initial acquisition is in progress, wait for it (max 5 seconds)
   if (tokenAcquisitionInProgress) {
     try {
       const token = await Promise.race([
         tokenAcquisitionInProgress,
-        new Promise(resolve => setTimeout(() => resolve(null), 3000))
+        new Promise(resolve => setTimeout(() => resolve(null), 5000))
       ]);
       if (token) return token;
     } catch (e) {
@@ -92,21 +92,23 @@ const getToken = async () => {
     }
   }
   
-  // Try to get fresh token
-  if (window.shopify && typeof window.shopify.idToken === 'function') {
+  // If still no token but App Bridge exists, try one more time
+  if (!cachedToken && window.shopify && typeof window.shopify.idToken === 'function') {
     try {
+      console.log('[API] Trying direct token fetch...');
       const token = await Promise.race([
         window.shopify.idToken(),
-        new Promise(resolve => setTimeout(() => resolve(null), 2000))
+        new Promise(resolve => setTimeout(() => resolve(null), 3000))
       ]);
       
       if (token) {
         cachedToken = token;
         tokenTimestamp = Date.now();
+        console.log('[API] Direct token fetch successful');
         return token;
       }
     } catch (e) {
-      console.log('[API] Token refresh error:', e.message);
+      console.log('[API] Direct token fetch error:', e.message);
     }
   }
   
