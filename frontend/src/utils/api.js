@@ -11,32 +11,93 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onr
 
 console.log('API_URL configured as:', API_URL);
 
-// Shared token cache - can be set from anywhere
+// Shared token cache
 let cachedToken = null;
 let tokenTimestamp = 0;
+let tokenAcquisitionInProgress = null;
 
 // Export function to set token from App.js background acquisition
 export const setCachedToken = (token) => {
   if (token) {
     cachedToken = token;
     tokenTimestamp = Date.now();
-    console.log('[API] Token cached from background acquisition');
+    console.log('[API] Token cached successfully');
   }
 };
 
-// Get token - first check cache, then try to get fresh one
+// Start acquiring token immediately on module load
+const startTokenAcquisition = () => {
+  if (!isEmbedded()) return Promise.resolve(null);
+  
+  tokenAcquisitionInProgress = new Promise((resolve) => {
+    let attempts = 0;
+    const maxAttempts = 40; // 20 seconds max
+    
+    const tryGetToken = () => {
+      attempts++;
+      
+      if (window.shopify && typeof window.shopify.idToken === 'function') {
+        console.log('[API] App Bridge found, getting token...');
+        
+        window.shopify.idToken()
+          .then(token => {
+            if (token) {
+              cachedToken = token;
+              tokenTimestamp = Date.now();
+              console.log('[API] Initial token acquired successfully');
+              resolve(token);
+            } else {
+              resolve(null);
+            }
+          })
+          .catch(err => {
+            console.log('[API] Token error:', err.message);
+            resolve(null);
+          });
+      } else if (attempts < maxAttempts) {
+        setTimeout(tryGetToken, 500);
+      } else {
+        console.log('[API] App Bridge not available after timeout');
+        resolve(null);
+      }
+    };
+    
+    // Start immediately
+    tryGetToken();
+  });
+  
+  return tokenAcquisitionInProgress;
+};
+
+// Start acquisition immediately when module loads
+startTokenAcquisition();
+
+// Get token - wait for initial acquisition if in progress
 const getToken = async () => {
-  // Use cached token if less than 50 seconds old
+  // If we have a fresh cached token, use it
   if (cachedToken && (Date.now() - tokenTimestamp) < 50000) {
     return cachedToken;
   }
   
-  // Try to get fresh token if App Bridge is ready
+  // If initial acquisition is in progress, wait for it (max 3 seconds)
+  if (tokenAcquisitionInProgress) {
+    try {
+      const token = await Promise.race([
+        tokenAcquisitionInProgress,
+        new Promise(resolve => setTimeout(() => resolve(null), 3000))
+      ]);
+      if (token) return token;
+    } catch (e) {
+      // Continue
+    }
+  }
+  
+  // Try to get fresh token
   if (window.shopify && typeof window.shopify.idToken === 'function') {
     try {
       const token = await Promise.race([
         window.shopify.idToken(),
-        new Promise((resolve) => setTimeout(() => resolve(null), 2000))
+        new Promise(resolve => setTimeout(() => resolve(null), 2000))
       ]);
       
       if (token) {
@@ -45,11 +106,11 @@ const getToken = async () => {
         return token;
       }
     } catch (e) {
-      console.log('[API] Token fetch error:', e.message);
+      console.log('[API] Token refresh error:', e.message);
     }
   }
   
-  return cachedToken; // Return cached even if expired, better than nothing
+  return cachedToken;
 };
 
 // Create axios instance
@@ -83,12 +144,12 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error('Authentication failed - clearing cached token');
+      console.error('Auth failed - clearing token');
       cachedToken = null;
       tokenTimestamp = 0;
     }
