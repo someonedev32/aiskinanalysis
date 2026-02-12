@@ -10,6 +10,7 @@ import Settings from "@/pages/Settings";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import { getShopDomain, getHost, isEmbedded } from "@/utils/shopifyAuth";
+import { setCachedToken } from "@/utils/api";
 
 // Context for Shopify authentication
 export const ShopifyAuthContext = createContext(null);
@@ -32,6 +33,10 @@ const acquireSessionTokenInBackground = () => {
           if (token) {
             console.log('[Session Token] SUCCESS - Session token retrieved');
             console.log('[Session Token] Using session token for user authentication');
+            
+            // Cache the token for API requests
+            setCachedToken(token);
+            
             sessionStorage.setItem('session_token_acquired', 'true');
           }
         })
@@ -43,7 +48,12 @@ const acquireSessionTokenInBackground = () => {
       setInterval(() => {
         if (window.shopify && typeof window.shopify.idToken === 'function') {
           window.shopify.idToken()
-            .then(() => console.log('[Session Token] Refreshed'))
+            .then(token => {
+              if (token) {
+                setCachedToken(token);
+                console.log('[Session Token] Refreshed');
+              }
+            })
             .catch(() => {});
         }
       }, 45000);
