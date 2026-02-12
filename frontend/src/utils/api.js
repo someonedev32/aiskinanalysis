@@ -11,6 +11,47 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onr
 
 console.log('API_URL configured as:', API_URL);
 
+// Shared token cache - can be set from anywhere
+let cachedToken = null;
+let tokenTimestamp = 0;
+
+// Export function to set token from App.js background acquisition
+export const setCachedToken = (token) => {
+  if (token) {
+    cachedToken = token;
+    tokenTimestamp = Date.now();
+    console.log('[API] Token cached from background acquisition');
+  }
+};
+
+// Get token - first check cache, then try to get fresh one
+const getToken = async () => {
+  // Use cached token if less than 50 seconds old
+  if (cachedToken && (Date.now() - tokenTimestamp) < 50000) {
+    return cachedToken;
+  }
+  
+  // Try to get fresh token if App Bridge is ready
+  if (window.shopify && typeof window.shopify.idToken === 'function') {
+    try {
+      const token = await Promise.race([
+        window.shopify.idToken(),
+        new Promise((resolve) => setTimeout(() => resolve(null), 2000))
+      ]);
+      
+      if (token) {
+        cachedToken = token;
+        tokenTimestamp = Date.now();
+        return token;
+      }
+    } catch (e) {
+      console.log('[API] Token fetch error:', e.message);
+    }
+  }
+  
+  return cachedToken; // Return cached even if expired, better than nothing
+};
+
 // Create axios instance
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -21,30 +62,17 @@ const api = axios.create({
 });
 
 // Request interceptor to add session token
-// This is REQUIRED for Shopify App Store compliance
 api.interceptors.request.use(
   async (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url);
     
-    // If we're in embedded Shopify context, try to add session token
-    if (isEmbedded() && window.shopify && typeof window.shopify.idToken === 'function') {
-      try {
-        // Get token with a short timeout to not block requests
-        const tokenPromise = window.shopify.idToken();
-        const timeoutPromise = new Promise((resolve) => 
-          setTimeout(() => resolve(null), 3000)
-        );
-        
-        const token = await Promise.race([tokenPromise, timeoutPromise]);
-        
-        if (token) {
-          config.headers['Authorization'] = `Bearer ${token}`;
-          console.log('[API] Request authenticated with session token');
-        } else {
-          console.log('[API] Token timeout, proceeding without');
-        }
-      } catch (error) {
-        console.log('[API] Token error, proceeding without:', error.message);
+    if (isEmbedded()) {
+      const token = await getToken();
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+        console.log('[API] Request authenticated with session token');
+      } else {
+        console.log('[API] No token available, proceeding without');
       }
     }
     return config;
@@ -60,7 +88,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error('Authentication failed - session may have expired');
+      console.error('Authentication failed - clearing cached token');
+      cachedToken = null;
+      tokenTimestamp = 0;
     }
     return Promise.reject(error);
   }
