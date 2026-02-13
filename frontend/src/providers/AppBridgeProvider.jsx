@@ -1,111 +1,50 @@
 /**
  * App Bridge Provider for Shopify Embedded Apps
  * 
- * This provider ensures App Bridge is properly initialized and provides
- * the shopify global variable to all child components.
+ * Uses @shopify/app-bridge-react as recommended by Shopify
+ * https://shopify.dev/docs/api/app-bridge-library/react-components
  */
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useMemo } from 'react';
+import { Provider } from '@shopify/app-bridge-react';
 
-// Create context for App Bridge
-const AppBridgeContext = createContext(null);
-
-// Hook to access App Bridge
-export function useAppBridge() {
-  const context = useContext(AppBridgeContext);
-  return context?.shopify || window.shopify || null;
+// Get host from URL query params
+function getHostFromLocation() {
+  if (typeof window === 'undefined') return undefined;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('host') || undefined;
 }
 
-// Hook to get session token
-export function useSessionToken() {
-  const shopify = useAppBridge();
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    let mounted = true;
-    let intervalId;
-    
-    const getToken = async () => {
-      if (shopify && typeof shopify.idToken === 'function') {
-        try {
-          const newToken = await shopify.idToken();
-          if (mounted && newToken) {
-            setToken(newToken);
-            console.log('[SessionToken] Token acquired successfully');
-          }
-        } catch (e) {
-          console.log('[SessionToken] Error:', e.message);
-        }
-      }
-      if (mounted) setLoading(false);
-    };
-    
-    getToken();
-    
-    // Refresh token every 50 seconds (tokens expire in 60s)
-    intervalId = setInterval(getToken, 50000);
-    
-    return () => {
-      mounted = false;
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [shopify]);
-  
-  return { token, loading };
-}
+// Shopify API Key - this is public and safe to expose
+const SHOPIFY_API_KEY = '92a7db21219834a47df3e9caa9318972';
 
 export function AppBridgeProvider({ children }) {
-  const [state, setState] = useState({
-    ready: false,
-    shopify: null,
-    error: null
-  });
+  const host = getHostFromLocation();
   
-  useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 20; // 10 seconds max
+  const config = useMemo(() => {
+    if (!host) {
+      console.log('[AppBridge] No host parameter found');
+      return null;
+    }
     
-    const checkAppBridge = () => {
-      attempts++;
-      
-      if (window.shopify) {
-        console.log('[AppBridge] Ready');
-        setState({
-          ready: true,
-          shopify: window.shopify,
-          error: null
-        });
-        
-        // Initialize session token for Shopify detection
-        if (typeof window.shopify.idToken === 'function') {
-          console.log('[AppBridge] Initializing session token...');
-          window.shopify.idToken()
-            .then(token => {
-              if (token) {
-                console.log('[AppBridge] Session token initialized - Using session tokens for user authentication');
-              }
-            })
-            .catch(e => console.log('[AppBridge] Token init:', e.message));
-        }
-      } else if (attempts < maxAttempts) {
-        setTimeout(checkAppBridge, 500);
-      } else {
-        console.log('[AppBridge] Not available - continuing without');
-        setState({
-          ready: true,
-          shopify: null,
-          error: 'App Bridge not available'
-        });
-      }
+    console.log('[AppBridge] Initializing with host:', host);
+    
+    return {
+      apiKey: SHOPIFY_API_KEY,
+      host: host,
+      forceRedirect: true, // Ensures we're always embedded in Admin
     };
-    
-    checkAppBridge();
-  }, []);
+  }, [host]);
+  
+  // If no config (not embedded), render children without provider
+  if (!config) {
+    console.log('[AppBridge] Running without App Bridge (not embedded)');
+    return <>{children}</>;
+  }
   
   return (
-    <AppBridgeContext.Provider value={state}>
+    <Provider config={config}>
       {children}
-    </AppBridgeContext.Provider>
+    </Provider>
   );
 }
 
