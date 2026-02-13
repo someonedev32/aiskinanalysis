@@ -23,8 +23,7 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useShopDomain } from "@/hooks/useShopDomain";
-import { useAppBridge } from '@shopify/app-bridge-react';
-import { getSessionToken } from '@shopify/app-bridge-utils';
+import { useAppBridge } from "@/providers/AppBridgeProvider";
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -32,27 +31,22 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
   
-  // Try to get App Bridge instance (may be null if not in provider)
-  let app = null;
-  try {
-    app = useAppBridge();
-    console.log('[Dashboard] App Bridge available');
-  } catch (e) {
-    console.log('[Dashboard] Running without App Bridge');
-  }
+  // Get App Bridge instance from our custom provider (may be null initially)
+  const shopify = useAppBridge();
 
-  // Function to get session token
+  // Function to get session token using window.shopify
   const getToken = useCallback(async () => {
-    if (!app) return null;
+    const app = shopify || window.shopify;
+    if (!app || typeof app.idToken !== 'function') return null;
     try {
-      const token = await getSessionToken(app);
+      const token = await app.idToken();
       console.log('[Dashboard] Session token acquired');
       return token;
     } catch (e) {
       console.log('[Dashboard] Token error:', e.message);
       return null;
     }
-  }, [app]);
+  }, [shopify]);
 
   // Debug logging
   console.log('Dashboard render - shopDomain:', shopDomain, 'shopLoading:', shopLoading, 'shopError:', shopError);
