@@ -102,7 +102,7 @@ export default function Dashboard() {
     };
     
     fetchData();
-  }, [shopDomain, shopLoading]);
+  }, [shopDomain, shopLoading, getToken]);
 
   if (loading) {
     return (
