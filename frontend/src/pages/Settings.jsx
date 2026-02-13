@@ -37,9 +37,16 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.post('/dashboard/settings', settings);
+      // Make sure shop_domain is included
+      const settingsToSave = {
+        ...settings,
+        shop_domain: shopDomain || settings.shop_domain
+      };
+      console.log('Saving settings:', settingsToSave);
+      await api.post('/dashboard/settings', settingsToSave);
       toast.success("Settings saved successfully");
     } catch (err) {
+      console.error('Save error:', err);
       toast.error("Failed to save settings");
     } finally {
       setSaving(false);
