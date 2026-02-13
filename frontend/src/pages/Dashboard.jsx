@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import api from "@/utils/api";
+import { useEffect, useState, useCallback } from "react";
+import api, { withSessionToken } from "@/utils/api";
 import { MetricCard } from "@/components/MetricCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,12 +23,36 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useShopDomain } from "@/hooks/useShopDomain";
+import { useAppBridge } from '@shopify/app-bridge-react';
+import { getSessionToken } from '@shopify/app-bridge-utils';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
+  
+  // Try to get App Bridge instance (may be null if not in provider)
+  let app = null;
+  try {
+    app = useAppBridge();
+    console.log('[Dashboard] App Bridge available');
+  } catch (e) {
+    console.log('[Dashboard] Running without App Bridge');
+  }
+
+  // Function to get session token
+  const getToken = useCallback(async () => {
+    if (!app) return null;
+    try {
+      const token = await getSessionToken(app);
+      console.log('[Dashboard] Session token acquired');
+      return token;
+    } catch (e) {
+      console.log('[Dashboard] Token error:', e.message);
+      return null;
+    }
+  }, [app]);
 
   // Debug logging
   console.log('Dashboard render - shopDomain:', shopDomain, 'shopLoading:', shopLoading, 'shopError:', shopError);
@@ -45,9 +69,16 @@ export default function Dashboard() {
       console.log('Dashboard: Starting fetchData for shop:', shopDomain);
       
       try {
-        // Fetch overview data directly (skip demo-data seeding to avoid delays)
+        // Get session token for authenticated request
+        const token = await getToken();
+        const config = token ? withSessionToken(token) : {};
+        
+        // Fetch overview data
         console.log('Dashboard: Calling /dashboard/overview API...');
         const res = await api.get('/dashboard/overview', {
+          params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
+          ...config
+        });
           params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
         });
         console.log('Dashboard: Data received:', res.data);
