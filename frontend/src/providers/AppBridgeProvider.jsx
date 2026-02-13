@@ -1,50 +1,57 @@
 /**
  * App Bridge Provider for Shopify Embedded Apps
  * 
- * Uses @shopify/app-bridge-react as recommended by Shopify
- * https://shopify.dev/docs/api/app-bridge-library/react-components
+ * For App Bridge v4, we use the CDN script + window.shopify global
+ * The CDN script in index.html provides the shopify global
  */
-import { useMemo } from 'react';
-import { Provider } from '@shopify/app-bridge-react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-// Get host from URL query params
-function getHostFromLocation() {
-  if (typeof window === 'undefined') return undefined;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('host') || undefined;
+// Context for App Bridge
+const AppBridgeContext = createContext(null);
+
+// Hook to get App Bridge instance
+export function useAppBridge() {
+  const context = useContext(AppBridgeContext);
+  if (context === undefined) {
+    // Return window.shopify if available
+    return typeof window !== 'undefined' ? window.shopify : null;
+  }
+  return context;
 }
 
-// Shopify API Key - this is public and safe to expose
-const SHOPIFY_API_KEY = '92a7db21219834a47df3e9caa9318972';
-
 export function AppBridgeProvider({ children }) {
-  const host = getHostFromLocation();
+  const [shopify, setShopify] = useState(null);
   
-  const config = useMemo(() => {
-    if (!host) {
-      console.log('[AppBridge] No host parameter found');
-      return null;
-    }
-    
-    console.log('[AppBridge] Initializing with host:', host);
-    
-    return {
-      apiKey: SHOPIFY_API_KEY,
-      host: host,
-      forceRedirect: true, // Ensures we're always embedded in Admin
+  useEffect(() => {
+    // Wait for App Bridge CDN to load
+    const checkAppBridge = () => {
+      if (window.shopify) {
+        console.log('[AppBridge] Ready via CDN');
+        setShopify(window.shopify);
+        
+        // Initialize session token for Shopify detection
+        if (typeof window.shopify.idToken === 'function') {
+          console.log('[AppBridge] Calling idToken for session token auth...');
+          window.shopify.idToken()
+            .then(token => {
+              if (token) {
+                console.log('[AppBridge] Session token acquired - Using session tokens for user authentication');
+              }
+            })
+            .catch(e => console.log('[AppBridge] Token:', e.message));
+        }
+      } else {
+        setTimeout(checkAppBridge, 100);
+      }
     };
-  }, [host]);
-  
-  // If no config (not embedded), render children without provider
-  if (!config) {
-    console.log('[AppBridge] Running without App Bridge (not embedded)');
-    return <>{children}</>;
-  }
+    
+    checkAppBridge();
+  }, []);
   
   return (
-    <Provider config={config}>
+    <AppBridgeContext.Provider value={shopify}>
       {children}
-    </Provider>
+    </AppBridgeContext.Provider>
   );
 }
 
