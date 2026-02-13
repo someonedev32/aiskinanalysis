@@ -1,39 +1,35 @@
 /**
  * Custom hook to get Shopify session tokens
- * Uses @shopify/app-bridge-react and @shopify/app-bridge-utils
+ * Uses window.shopify global from App Bridge CDN
  */
-import { useAppBridge } from '@shopify/app-bridge-react';
-import { getSessionToken } from '@shopify/app-bridge-utils';
 import { useCallback } from 'react';
+import { useAppBridge } from '@/providers/AppBridgeProvider';
 
 export function useShopifySessionToken() {
-  let app = null;
-  
-  try {
-    app = useAppBridge();
-  } catch (e) {
-    // Not in App Bridge context
-    console.log('[SessionToken] Not in App Bridge context');
-  }
+  // Get shopify instance from our custom provider
+  const shopify = useAppBridge();
   
   const fetchToken = useCallback(async () => {
-    if (!app) {
-      console.log('[SessionToken] No app instance');
+    // Use provider value or fallback to window.shopify
+    const app = shopify || window.shopify;
+    
+    if (!app || typeof app.idToken !== 'function') {
+      console.log('[SessionToken] No app instance available');
       return null;
     }
     
     try {
       console.log('[SessionToken] Getting session token...');
-      const token = await getSessionToken(app);
+      const token = await app.idToken();
       console.log('[SessionToken] Token acquired successfully');
       return token;
     } catch (error) {
       console.error('[SessionToken] Error getting token:', error.message);
       return null;
     }
-  }, [app]);
+  }, [shopify]);
   
-  return { fetchToken, app };
+  return { fetchToken, app: shopify };
 }
 
 export default useShopifySessionToken;
