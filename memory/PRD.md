@@ -143,14 +143,15 @@ The user is developing a Shopify app called "AI SkinAnalysis" for submission to 
 - [x] OpenAI Vision skin analysis
 - [x] GDPR webhooks with HMAC verification
 - [x] Theme extension with camera capture
-- [x] Session token authentication
+- [x] Session token authentication via App Bridge CDN v4
 - [x] Product matching based on tags
+- [x] **Fixed Vercel build error** (Feb 13, 2026): Resolved React Hooks rules violation in Dashboard.jsx and useShopifySessionToken.js - removed conditional hook calls
 
 ### Ready for Testing
-- [ ] Deploy frontend to Vercel
+- [ ] Deploy frontend to Vercel (build now succeeds)
 - [ ] Deploy backend to Render
 - [ ] Configure Shopify app settings
-- [ ] Test embedded app checks
+- [ ] Test embedded app checks (session token)
 - [ ] Deploy theme extension
 
 ## Environment Variables
