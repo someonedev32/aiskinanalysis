@@ -59,12 +59,6 @@ async def proxy_analyze_skin(request: Request):
     # Log for debugging
     logger.info(f"Analyze request from shop: {shop}")
     
-    # Skip HMAC verification for now (App Proxy sends signature but we need to debug)
-    # TODO: Re-enable HMAC verification for production
-    # params_copy = {k: v for k, v in params.items()}
-    # if not verify_proxy_hmac(params_copy):
-    #     raise HTTPException(status_code=401, detail="Invalid proxy signature")
-
     # Check shop exists and has quota
     shop_data = await db.shops.find_one({"shop_domain": shop})
     if not shop_data:
@@ -75,9 +69,14 @@ async def proxy_analyze_skin(request: Request):
             raise HTTPException(status_code=404, detail=f"Shop not found: {shop}")
         shop = shop_with_suffix
 
-    # Skip is_active check for testing
-    # if not shop_data.get("is_active"):
-    #     raise HTTPException(status_code=403, detail="App not active for this shop")
+    # Check settings - camera_enabled and auto_recommend
+    settings = await db.settings.find_one({"shop_domain": shop})
+    if settings:
+        if not settings.get("camera_enabled", True):
+            raise HTTPException(status_code=403, detail="Camera capture is disabled for this store")
+    
+    # Get auto_recommend setting for later
+    auto_recommend = settings.get("auto_recommend", True) if settings else True
 
     scan_count = shop_data.get("scan_count", 0)
     scan_limit = shop_data.get("scan_limit", 0)
@@ -111,8 +110,12 @@ async def proxy_analyze_skin(request: Request):
         "concerns": result.get("concerns", [])
     })
 
-    # Fetch matching products from Shopify if collection_id is set
+    # Fetch matching products only if auto_recommend is enabled
     products = []
+    if not auto_recommend:
+        logger.info("Auto-recommend is disabled, skipping product matching")
+        return {"success": True, "result": result, "products": products}
+    
     # Get collection_id from query params (sent from theme extension)
     collection_id = params.get("collection_id", "")
     access_token = shop_data.get("access_token", "")
