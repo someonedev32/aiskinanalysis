@@ -10,65 +10,9 @@ import Settings from "@/pages/Settings";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import { getShopDomain, getHost, isEmbedded } from "@/utils/shopifyAuth";
-import { setCachedToken } from "@/utils/api";
 
 // Context for Shopify authentication
 export const ShopifyAuthContext = createContext(null);
-
-// Acquire session token in background (non-blocking)
-const acquireSessionTokenInBackground = () => {
-  // Check every 500ms for App Bridge for up to 15 seconds
-  let attempts = 0;
-  const maxAttempts = 30;
-  
-  const tryGetToken = () => {
-    attempts++;
-    
-    if (window.shopify && typeof window.shopify.idToken === 'function') {
-      // App Bridge is ready - get token
-      console.log('[Session Token] App Bridge ready, calling idToken()...');
-      
-      window.shopify.idToken()
-        .then(token => {
-          if (token) {
-            console.log('[Session Token] SUCCESS - Session token retrieved');
-            console.log('[Session Token] Using session token for user authentication');
-            
-            // Cache the token for API requests
-            setCachedToken(token);
-            
-            sessionStorage.setItem('session_token_acquired', 'true');
-          }
-        })
-        .catch(err => {
-          console.log('[Session Token] Error:', err.message);
-        });
-      
-      // Set up periodic refresh every 45 seconds
-      setInterval(() => {
-        if (window.shopify && typeof window.shopify.idToken === 'function') {
-          window.shopify.idToken()
-            .then(token => {
-              if (token) {
-                setCachedToken(token);
-                console.log('[Session Token] Refreshed');
-              }
-            })
-            .catch(() => {});
-        }
-      }, 45000);
-      
-    } else if (attempts < maxAttempts) {
-      // Keep trying
-      setTimeout(tryGetToken, 500);
-    } else {
-      console.log('[Session Token] App Bridge not available after 15s');
-    }
-  };
-  
-  // Start trying after a short delay
-  setTimeout(tryGetToken, 500);
-};
 
 function App() {
   const [authState, setAuthState] = useState({
@@ -98,7 +42,7 @@ function App() {
       }
     }
     
-    // Set initialized IMMEDIATELY - don't wait for anything
+    // Set initialized immediately
     setAuthState({
       initialized: true,
       shop,
@@ -109,14 +53,33 @@ function App() {
     
     console.log('[App] App initialized, rendering now');
     
-    // If embedded, start acquiring session token in background
+    // If embedded, App Bridge CDN handles session tokens automatically
+    // We just need to call idToken() once for Shopify to detect we're using it
     if (embedded) {
-      console.log('[App] Embedded context detected, acquiring session token in background...');
-      acquireSessionTokenInBackground();
+      console.log('[App] Embedded context - App Bridge CDN handles authentication automatically');
+      
+      // Call idToken once so Shopify sees we're using session tokens
+      const initSessionToken = () => {
+        if (window.shopify && typeof window.shopify.idToken === 'function') {
+          console.log('[App] Calling shopify.idToken() for Shopify detection...');
+          window.shopify.idToken()
+            .then(token => {
+              if (token) {
+                console.log('[App] Session token active - Shopify will auto-inject in fetch requests');
+              }
+            })
+            .catch(e => console.log('[App] idToken call noted:', e.message));
+        } else {
+          // Retry after App Bridge loads
+          setTimeout(initSessionToken, 500);
+        }
+      };
+      
+      setTimeout(initSessionToken, 1000);
     }
   }, []);
 
-  // Show loading ONLY during initial React render
+  // Show loading only during initial React render
   if (!authState.initialized) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F6F6F7]">
