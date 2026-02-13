@@ -23,10 +23,16 @@ export default function Settings() {
     
     const fetchSettings = async () => {
       try {
+        console.log('Fetching settings for shop:', shopDomain);
         const res = await api.get('/dashboard/settings', {
           params: { shop_domain: shopDomain },
         });
-        setSettings(res.data);
+        console.log('Settings received:', res.data);
+        // Ensure shop_domain is set
+        setSettings({
+          ...res.data,
+          shop_domain: shopDomain
+        });
       } catch (err) {
         console.error("Settings fetch error:", err);
       }
