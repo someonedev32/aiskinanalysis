@@ -53,29 +53,34 @@ function App() {
     
     console.log('[App] App initialized, rendering now');
     
-    // If embedded, App Bridge CDN handles session tokens automatically
-    // We just need to call idToken() once for Shopify to detect we're using it
+    // If embedded, call idToken() for Shopify to detect session token usage
     if (embedded) {
-      console.log('[App] Embedded context - App Bridge CDN handles authentication automatically');
+      console.log('[App] Embedded context - initializing session token auth...');
       
-      // Call idToken once so Shopify sees we're using session tokens
-      const initSessionToken = () => {
+      const initSessionToken = async () => {
         if (window.shopify && typeof window.shopify.idToken === 'function') {
-          console.log('[App] Calling shopify.idToken() for Shopify detection...');
-          window.shopify.idToken()
-            .then(token => {
-              if (token) {
-                console.log('[App] Session token active - Shopify will auto-inject in fetch requests');
-              }
-            })
-            .catch(e => console.log('[App] idToken call noted:', e.message));
+          try {
+            console.log('[App] Calling shopify.idToken()...');
+            const token = await window.shopify.idToken();
+            if (token) {
+              console.log('[App] SUCCESS: Session token retrieved');
+              console.log('[App] Token will be used for API authentication');
+              sessionStorage.setItem('session_token_active', 'true');
+            } else {
+              console.log('[App] idToken returned null');
+            }
+          } catch (e) {
+            console.log('[App] idToken error:', e.message);
+          }
         } else {
           // Retry after App Bridge loads
-          setTimeout(initSessionToken, 500);
+          console.log('[App] Waiting for App Bridge...');
+          setTimeout(initSessionToken, 1000);
         }
       };
       
-      setTimeout(initSessionToken, 1000);
+      // Start immediately, not with delay
+      initSessionToken();
     }
   }, []);
 
