@@ -181,7 +181,14 @@ CORS_ORIGINS=https://your-frontend.vercel.app
 5. **Submit**: Submit app for Shopify review
 
 ## Known Issues
-- None currently - codebase is complete and tested
+- **P1**: Shopify "Embedded app checks" not yet verified - requires deployment to Vercel and testing within Shopify Admin to trigger Shopify's automated check
+
+## Session Token Implementation Notes
+The app uses App Bridge v4 CDN approach:
+1. `index.html` loads `https://cdn.shopify.com/shopifycloud/app-bridge.js`
+2. `AppBridgeProvider.jsx` waits for `window.shopify` global
+3. `useAppBridge()` hook provides access to shopify instance
+4. `window.shopify.idToken()` fetches session tokens for API calls
 
 ## Contact
 support@inovation.app
