@@ -1,81 +1,48 @@
 /**
- * API utility with Shopify session token authentication
- * 
- * IMPORTANT: The current version of App Bridge CDN automatically adds
- * session tokens to fetch() requests. We use the native fetch API
- * which App Bridge enhances automatically.
+ * Axios instance for API requests
+ * App Bridge CDN automatically handles session tokens for fetch,
+ * but we use axios for better error handling.
  */
-import { isEmbedded } from './shopifyAuth';
+import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
 
 console.log('API_URL configured as:', API_URL);
 
-// Use native fetch which App Bridge CDN automatically authenticates
-const api = {
-  async request(method, endpoint, data = null, params = {}) {
-    // Build URL with query params
-    let url = `${API_URL}/api${endpoint}`;
-    if (Object.keys(params).length > 0) {
-      const searchParams = new URLSearchParams(params);
-      url += `?${searchParams.toString()}`;
-    }
-    
-    console.log(`API Request: ${method} ${endpoint}`);
-    
-    const options = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-    
-    if (data && method !== 'GET') {
-      options.body = JSON.stringify(data);
-    }
-    
-    try {
-      // Use native fetch - App Bridge CDN automatically adds session token
-      const response = await fetch(url, options);
-      
-      // Log if authenticated (check for Authorization header in request)
-      if (isEmbedded()) {
-        console.log('[API] Request sent via fetch (App Bridge handles auth)');
-      }
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.detail || `HTTP ${response.status}`);
-        error.response = { status: response.status, data: errorData };
-        throw error;
-      }
-      
-      const responseData = await response.json();
-      return { data: responseData, status: response.status };
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
+// Create axios instance
+const api = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: {
+    'Content-Type': 'application/json'
   },
-  
-  get(endpoint, config = {}) {
-    return this.request('GET', endpoint, null, config.params || {});
-  },
-  
-  post(endpoint, data = {}, config = {}) {
-    return this.request('POST', endpoint, data, config.params || {});
-  },
-  
-  put(endpoint, data = {}, config = {}) {
-    return this.request('PUT', endpoint, data, config.params || {});
-  },
-  
-  delete(endpoint, config = {}) {
-    return this.request('DELETE', endpoint, null, config.params || {});
-  }
-};
+  timeout: 30000
+});
 
-// Export setCachedToken for backwards compatibility (no longer needed)
+// Simple request logging
+api.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response logging
+api.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', error.response?.status, error.message);
+    return Promise.reject(error);
+  }
+);
+
+// Export for backwards compatibility
 export const setCachedToken = () => {};
 
 export default api;
