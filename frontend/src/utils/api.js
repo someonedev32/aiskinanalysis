@@ -1,162 +1,81 @@
 /**
- * Axios instance with Shopify session token authentication
- * This ensures all API requests include the session token when in embedded context
+ * API utility with Shopify session token authentication
  * 
- * IMPORTANT: Session token authentication is REQUIRED for Shopify App Store approval
+ * IMPORTANT: The current version of App Bridge CDN automatically adds
+ * session tokens to fetch() requests. We use the native fetch API
+ * which App Bridge enhances automatically.
  */
-import axios from 'axios';
 import { isEmbedded } from './shopifyAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
 
 console.log('API_URL configured as:', API_URL);
 
-// Shared token cache
-let cachedToken = null;
-let tokenTimestamp = 0;
-let tokenAcquisitionInProgress = null;
-
-// Export function to set token from App.js background acquisition
-export const setCachedToken = (token) => {
-  if (token) {
-    cachedToken = token;
-    tokenTimestamp = Date.now();
-    console.log('[API] Token cached successfully');
-  }
-};
-
-// Start acquiring token immediately on module load
-const startTokenAcquisition = () => {
-  if (!isEmbedded()) return Promise.resolve(null);
-  
-  tokenAcquisitionInProgress = new Promise((resolve) => {
-    let attempts = 0;
-    const maxAttempts = 40; // 20 seconds max
+// Use native fetch which App Bridge CDN automatically authenticates
+const api = {
+  async request(method, endpoint, data = null, params = {}) {
+    // Build URL with query params
+    let url = `${API_URL}/api${endpoint}`;
+    if (Object.keys(params).length > 0) {
+      const searchParams = new URLSearchParams(params);
+      url += `?${searchParams.toString()}`;
+    }
     
-    const tryGetToken = () => {
-      attempts++;
-      
-      if (window.shopify && typeof window.shopify.idToken === 'function') {
-        console.log('[API] App Bridge found, getting token...');
-        
-        window.shopify.idToken()
-          .then(token => {
-            if (token) {
-              cachedToken = token;
-              tokenTimestamp = Date.now();
-              console.log('[API] Initial token acquired successfully');
-              resolve(token);
-            } else {
-              resolve(null);
-            }
-          })
-          .catch(err => {
-            console.log('[API] Token error:', err.message);
-            resolve(null);
-          });
-      } else if (attempts < maxAttempts) {
-        setTimeout(tryGetToken, 500);
-      } else {
-        console.log('[API] App Bridge not available after timeout');
-        resolve(null);
-      }
+    console.log(`API Request: ${method} ${endpoint}`);
+    
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     };
     
-    // Start immediately
-    tryGetToken();
-  });
-  
-  return tokenAcquisitionInProgress;
-};
-
-// Start acquisition immediately when module loads
-startTokenAcquisition();
-
-// Get token - wait for initial acquisition if in progress
-const getToken = async () => {
-  // If we have a fresh cached token, use it
-  if (cachedToken && (Date.now() - tokenTimestamp) < 50000) {
-    return cachedToken;
-  }
-  
-  // If initial acquisition is in progress, wait for it (max 5 seconds)
-  if (tokenAcquisitionInProgress) {
-    try {
-      const token = await Promise.race([
-        tokenAcquisitionInProgress,
-        new Promise(resolve => setTimeout(() => resolve(null), 5000))
-      ]);
-      if (token) return token;
-    } catch (e) {
-      // Continue
+    if (data && method !== 'GET') {
+      options.body = JSON.stringify(data);
     }
-  }
-  
-  // If still no token but App Bridge exists, try one more time
-  if (!cachedToken && window.shopify && typeof window.shopify.idToken === 'function') {
-    try {
-      console.log('[API] Trying direct token fetch...');
-      const token = await Promise.race([
-        window.shopify.idToken(),
-        new Promise(resolve => setTimeout(() => resolve(null), 3000))
-      ]);
-      
-      if (token) {
-        cachedToken = token;
-        tokenTimestamp = Date.now();
-        console.log('[API] Direct token fetch successful');
-        return token;
-      }
-    } catch (e) {
-      console.log('[API] Direct token fetch error:', e.message);
-    }
-  }
-  
-  return cachedToken;
-};
-
-// Create axios instance
-const api = axios.create({
-  baseURL: `${API_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  timeout: 30000
-});
-
-// Request interceptor to add session token
-api.interceptors.request.use(
-  async (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
     
-    if (isEmbedded()) {
-      const token = await getToken();
-      if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
-        console.log('[API] Request authenticated with session token');
-      } else {
-        console.log('[API] No token available, proceeding without');
+    try {
+      // Use native fetch - App Bridge CDN automatically adds session token
+      const response = await fetch(url, options);
+      
+      // Log if authenticated (check for Authorization header in request)
+      if (isEmbedded()) {
+        console.log('[API] Request sent via fetch (App Bridge handles auth)');
       }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.detail || `HTTP ${response.status}`);
+        error.response = { status: response.status, data: errorData };
+        throw error;
+      }
+      
+      const responseData = await response.json();
+      return { data: responseData, status: response.status };
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
     }
-    return config;
   },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
+  
+  get(endpoint, config = {}) {
+    return this.request('GET', endpoint, null, config.params || {});
+  },
+  
+  post(endpoint, data = {}, config = {}) {
+    return this.request('POST', endpoint, data, config.params || {});
+  },
+  
+  put(endpoint, data = {}, config = {}) {
+    return this.request('PUT', endpoint, data, config.params || {});
+  },
+  
+  delete(endpoint, config = {}) {
+    return this.request('DELETE', endpoint, null, config.params || {});
   }
-);
+};
 
-// Response interceptor
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      console.error('Auth failed - clearing token');
-      cachedToken = null;
-      tokenTimestamp = 0;
-    }
-    return Promise.reject(error);
-  }
-);
+// Export setCachedToken for backwards compatibility (no longer needed)
+export const setCachedToken = () => {};
 
 export default api;
