@@ -34,12 +34,20 @@ export default function Dashboard() {
   // Get App Bridge instance from our custom provider (may be null initially)
   const shopify = useAppBridge();
 
-  // Function to get session token using window.shopify
+  // Function to get session token using window.shopify with timeout
   const getToken = useCallback(async () => {
     const app = shopify || window.shopify;
-    if (!app || typeof app.idToken !== 'function') return null;
+    if (!app || typeof app.idToken !== 'function') {
+      console.log('[Dashboard] No app instance for token');
+      return null;
+    }
     try {
-      const token = await app.idToken();
+      // Add timeout to prevent hanging
+      const tokenPromise = app.idToken();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Token timeout')), 3000)
+      );
+      const token = await Promise.race([tokenPromise, timeoutPromise]);
       console.log('[Dashboard] Session token acquired');
       return token;
     } catch (e) {
