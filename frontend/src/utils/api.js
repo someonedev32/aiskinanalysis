@@ -1,12 +1,10 @@
 /**
- * Axios instance with Shopify session token authentication
+ * API utility for making authenticated requests
  * 
- * CRITICAL: Shopify "Embedded app checks" requires:
- * 1. App Bridge CDN script loaded with data-api-key
- * 2. Session tokens used for API authentication (Authorization header)
+ * Session tokens are handled by individual components using useShopifySessionToken hook
+ * This is the base axios instance with common configuration
  */
 import axios from 'axios';
-import { isEmbedded } from './shopifyAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
 
@@ -21,31 +19,13 @@ const api = axios.create({
   timeout: 30000
 });
 
-// Request interceptor - add session token for Shopify compliance
+// Request logging
 api.interceptors.request.use(
-  async (config) => {
+  (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url);
-    
-    // Add session token if in embedded context (with timeout to not block)
-    if (isEmbedded() && window.shopify && typeof window.shopify.idToken === 'function') {
-      try {
-        // Get token with 2 second timeout
-        const tokenPromise = window.shopify.idToken();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 2000)
-        );
-        
-        const token = await Promise.race([tokenPromise, timeoutPromise]);
-        if (token) {
-          config.headers['Authorization'] = `Bearer ${token}`;
-          console.log('[Auth] Session token added to request');
-        }
-      } catch (e) {
-        // Don't block request if token fails
-        console.log('[Auth] Proceeding without token:', e.message);
-      }
+    if (config.headers['Authorization']) {
+      console.log('[Auth] Request includes session token');
     }
-    
     return config;
   },
   (error) => {
@@ -54,7 +34,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response logging
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.status, response.config.url);
@@ -66,6 +46,11 @@ api.interceptors.response.use(
   }
 );
 
-export const setCachedToken = () => {};
+// Helper to create authenticated request config
+export const withSessionToken = (token) => ({
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
 
 export default api;
