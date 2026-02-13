@@ -10,11 +10,12 @@ import Settings from "@/pages/Settings";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import { getShopDomain, getHost, isEmbedded } from "@/utils/shopifyAuth";
+import { AppBridgeProvider } from "@/providers/AppBridgeProvider";
 
 // Context for Shopify authentication
 export const ShopifyAuthContext = createContext(null);
 
-function App() {
+function AppContent() {
   const [authState, setAuthState] = useState({
     initialized: false,
     shop: null,
@@ -52,36 +53,6 @@ function App() {
     });
     
     console.log('[App] App initialized, rendering now');
-    
-    // If embedded, call idToken() for Shopify to detect session token usage
-    if (embedded) {
-      console.log('[App] Embedded context - initializing session token auth...');
-      
-      const initSessionToken = async () => {
-        if (window.shopify && typeof window.shopify.idToken === 'function') {
-          try {
-            console.log('[App] Calling shopify.idToken()...');
-            const token = await window.shopify.idToken();
-            if (token) {
-              console.log('[App] SUCCESS: Session token retrieved');
-              console.log('[App] Token will be used for API authentication');
-              sessionStorage.setItem('session_token_active', 'true');
-            } else {
-              console.log('[App] idToken returned null');
-            }
-          } catch (e) {
-            console.log('[App] idToken error:', e.message);
-          }
-        } else {
-          // Retry after App Bridge loads
-          console.log('[App] Waiting for App Bridge...');
-          setTimeout(initSessionToken, 1000);
-        }
-      };
-      
-      // Start immediately, not with delay
-      initSessionToken();
-    }
   }, []);
 
   // Show loading only during initial React render
@@ -115,6 +86,14 @@ function App() {
         <Toaster position="top-right" richColors />
       </div>
     </ShopifyAuthContext.Provider>
+  );
+}
+
+function App() {
+  return (
+    <AppBridgeProvider>
+      <AppContent />
+    </AppBridgeProvider>
   );
 }
 
