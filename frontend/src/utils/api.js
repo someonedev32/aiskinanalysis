@@ -26,16 +26,23 @@ api.interceptors.request.use(
   async (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url);
     
-    // Add session token if in embedded context
+    // Add session token if in embedded context (with timeout to not block)
     if (isEmbedded() && window.shopify && typeof window.shopify.idToken === 'function') {
       try {
-        const token = await window.shopify.idToken();
+        // Get token with 2 second timeout
+        const tokenPromise = window.shopify.idToken();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 2000)
+        );
+        
+        const token = await Promise.race([tokenPromise, timeoutPromise]);
         if (token) {
           config.headers['Authorization'] = `Bearer ${token}`;
           console.log('[Auth] Session token added to request');
         }
       } catch (e) {
-        console.log('[Auth] Could not get token:', e.message);
+        // Don't block request if token fails
+        console.log('[Auth] Proceeding without token:', e.message);
       }
     }
     
