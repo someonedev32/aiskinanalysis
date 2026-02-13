@@ -20,7 +20,12 @@ export function useShopifySessionToken() {
     
     try {
       console.log('[SessionToken] Getting session token...');
-      const token = await app.idToken();
+      // Add timeout to prevent hanging
+      const tokenPromise = app.idToken();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Token timeout')), 3000)
+      );
+      const token = await Promise.race([tokenPromise, timeoutPromise]);
       console.log('[SessionToken] Token acquired successfully');
       return token;
     } catch (error) {
