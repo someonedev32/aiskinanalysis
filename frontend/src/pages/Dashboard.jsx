@@ -79,8 +79,6 @@ export default function Dashboard() {
           params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
           ...config
         });
-          params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
-        });
         console.log('Dashboard: Data received:', res.data);
         setData(res.data);
       } catch (err) {
