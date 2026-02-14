@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import api, { withSessionToken } from "@/utils/api";
+import { useEffect, useState } from "react";
+import api from "@/utils/api";
 import { MetricCard } from "@/components/MetricCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,38 +23,12 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useShopDomain } from "@/hooks/useShopDomain";
-import { useAppBridge } from "@/providers/AppBridgeProvider";
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { shopDomain, loading: shopLoading, error: shopError } = useShopDomain();
-  
-  // Get App Bridge instance from our custom provider (may be null initially)
-  const shopify = useAppBridge();
-
-  // Function to get session token using window.shopify with timeout
-  const getToken = useCallback(async () => {
-    const app = shopify || window.shopify;
-    if (!app || typeof app.idToken !== 'function') {
-      console.log('[Dashboard] No app instance for token');
-      return null;
-    }
-    try {
-      // Add timeout to prevent hanging
-      const tokenPromise = app.idToken();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Token timeout')), 3000)
-      );
-      const token = await Promise.race([tokenPromise, timeoutPromise]);
-      console.log('[Dashboard] Session token acquired');
-      return token;
-    } catch (e) {
-      console.log('[Dashboard] Token error:', e.message);
-      return null;
-    }
-  }, [shopify]);
 
   // Debug logging
   console.log('Dashboard render - shopDomain:', shopDomain, 'shopLoading:', shopLoading, 'shopError:', shopError);
@@ -66,20 +40,14 @@ export default function Dashboard() {
       return;
     }
     
-    // If we have shop domain or not, try to fetch data
+    // Fetch data (App Bridge v4 auto-injects session token into fetch)
     const fetchData = async () => {
       console.log('Dashboard: Starting fetchData for shop:', shopDomain);
       
       try {
-        // Get session token for authenticated request
-        const token = await getToken();
-        const config = token ? withSessionToken(token) : {};
-        
-        // Fetch overview data
         console.log('Dashboard: Calling /dashboard/overview API...');
         const res = await api.get('/dashboard/overview', {
-          params: { shop_domain: shopDomain || 'demo-store.myshopify.com' },
-          ...config
+          params: { shop_domain: shopDomain || 'demo-store.myshopify.com' }
         });
         console.log('Dashboard: Data received:', res.data);
         setData(res.data);
@@ -104,7 +72,7 @@ export default function Dashboard() {
     };
     
     fetchData();
-  }, [shopDomain, shopLoading, getToken]);
+  }, [shopDomain, shopLoading]);
 
   if (loading) {
     return (
