@@ -1,15 +1,16 @@
 /**
  * API utility for making authenticated requests
  * 
- * App Bridge v4 may auto-inject session tokens into fetch() requests
- * We also check for id_token in URL params as fallback
+ * IMPORTANT: Using XMLHttpRequest instead of fetch because App Bridge v4
+ * intercepts fetch() calls and causes them to hang for cross-origin requests.
+ * XMLHttpRequest is not intercepted by App Bridge.
  */
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
 
 console.log('API_URL configured as:', API_URL);
 
-// Get session token from URL if present (App Bridge sometimes passes it this way)
+// Get session token from URL if present
 function getIdTokenFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id_token');
@@ -26,98 +27,85 @@ function buildUrl(endpoint, params = {}) {
   return url.toString();
 }
 
-// API wrapper using native fetch
+// Promise-based XMLHttpRequest wrapper (not intercepted by App Bridge)
+function xhrRequest(method, url, body = null, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url, true);
+    
+    // Set headers
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    Object.keys(headers).forEach(key => {
+      xhr.setRequestHeader(key, headers[key]);
+    });
+    
+    xhr.onload = function() {
+      console.log('API Response:', xhr.status, url);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve({ data, status: xhr.status });
+        } catch (e) {
+          resolve({ data: xhr.responseText, status: xhr.status });
+        }
+      } else {
+        const error = new Error(`HTTP ${xhr.status}`);
+        try {
+          error.response = { status: xhr.status, data: JSON.parse(xhr.responseText) };
+        } catch (e) {
+          error.response = { status: xhr.status, data: xhr.responseText };
+        }
+        reject(error);
+      }
+    };
+    
+    xhr.onerror = function() {
+      console.error('API Network Error');
+      reject(new Error('Network error'));
+    };
+    
+    xhr.ontimeout = function() {
+      console.error('API Timeout');
+      reject(new Error('Request timeout'));
+    };
+    
+    xhr.timeout = 30000; // 30 second timeout
+    
+    console.log('API Request:', method, url);
+    xhr.send(body ? JSON.stringify(body) : null);
+  });
+}
+
+// API wrapper using XMLHttpRequest
 const api = {
   async get(endpoint, options = {}) {
     const { params = {}, headers = {} } = options;
     const url = buildUrl(endpoint, params);
     
-    console.log('API Request: GET', endpoint, url);
-    
     // Check for id_token in URL (fallback method)
     const urlToken = getIdTokenFromUrl();
-    const authHeaders = {};
+    const authHeaders = { ...headers };
     if (urlToken) {
       console.log('[Auth] Using id_token from URL');
       authHeaders['Authorization'] = `Bearer ${urlToken}`;
     }
     
-    try {
-      console.log('API: Making fetch request...');
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-          ...headers
-        }
-        // Note: Don't use credentials: 'include' for cross-origin requests to avoid CORB
-      });
-      
-      console.log('API Response received:', response.status, response.statusText, endpoint);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response Body:', errorText);
-        const errorData = JSON.parse(errorText || '{}');
-        const error = new Error(errorData.detail || `HTTP ${response.status}`);
-        error.response = { status: response.status, data: errorData };
-        throw error;
-      }
-      
-      const data = await response.json();
-      console.log('API Data parsed successfully');
-      return { data, status: response.status };
-    } catch (error) {
-      console.error('API Fetch Error:', error.name, error.message);
-      if (error.name === 'TypeError') {
-        console.error('Network error - possibly CORS or connection issue');
-      }
-      throw error;
-    }
+    return xhrRequest('GET', url, null, authHeaders);
   },
   
   async post(endpoint, body = {}, options = {}) {
     const { params = {}, headers = {} } = options;
     const url = buildUrl(endpoint, params);
     
-    console.log('API Request: POST', endpoint);
-    
     // Check for id_token in URL (fallback method)
     const urlToken = getIdTokenFromUrl();
-    const authHeaders = {};
+    const authHeaders = { ...headers };
     if (urlToken) {
       console.log('[Auth] Using id_token from URL');
       authHeaders['Authorization'] = `Bearer ${urlToken}`;
     }
     
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-          ...headers
-        },
-        body: JSON.stringify(body)
-        // Note: Don't use credentials: 'include' for cross-origin requests to avoid CORB
-      });
-      
-      console.log('API Response:', response.status, endpoint);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.detail || `HTTP ${response.status}`);
-        error.response = { status: response.status, data: errorData };
-        throw error;
-      }
-      
-      const data = await response.json();
-      return { data, status: response.status };
-    } catch (error) {
-      console.error('API Error:', error.response?.status || 'Network', error.message);
-      throw error;
-    }
+    return xhrRequest('POST', url, body, authHeaders);
   }
 };
 
