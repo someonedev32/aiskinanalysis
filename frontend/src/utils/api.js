@@ -49,8 +49,8 @@ const api = {
           'Content-Type': 'application/json',
           ...authHeaders,
           ...headers
-        },
-        credentials: 'include'
+        }
+        // Note: Don't use credentials: 'include' for cross-origin requests to avoid CORB
       });
       
       console.log('API Response:', response.status, endpoint);
@@ -92,8 +92,8 @@ const api = {
           ...authHeaders,
           ...headers
         },
-        body: JSON.stringify(body),
-        credentials: 'include'
+        body: JSON.stringify(body)
+        // Note: Don't use credentials: 'include' for cross-origin requests to avoid CORB
       });
       
       console.log('API Response:', response.status, endpoint);
