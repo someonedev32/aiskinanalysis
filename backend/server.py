@@ -29,7 +29,7 @@ cors_origins.extend([
 
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
+    allow_credentials=False,  # Don't require credentials for simpler CORS
     allow_origins=["*"],  # Allow all origins for Shopify embedded apps
     allow_methods=["*"],
     allow_headers=["*"],
