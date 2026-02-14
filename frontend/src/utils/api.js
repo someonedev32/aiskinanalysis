@@ -1,52 +1,94 @@
 /**
  * API utility for making authenticated requests
  * 
- * Session tokens are handled by individual components using useShopifySessionToken hook
- * This is the base axios instance with common configuration
+ * App Bridge v4 automatically injects session tokens into fetch() requests
+ * So we use native fetch instead of axios for automatic authentication
  */
-import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://aiskinanalysis.onrender.com';
 
 console.log('API_URL configured as:', API_URL);
 
-// Create axios instance
-const api = axios.create({
-  baseURL: `${API_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  timeout: 30000
-});
-
-// Request logging
-api.interceptors.request.use(
-  (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
-    if (config.headers['Authorization']) {
-      console.log('[Auth] Request includes session token');
+// Helper function to build URL with query params
+function buildUrl(endpoint, params = {}) {
+  const url = new URL(`${API_URL}/api${endpoint}`);
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== null) {
+      url.searchParams.append(key, params[key]);
     }
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
+  });
+  return url.toString();
+}
 
-// Response logging
-api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response.status, response.config.url);
-    return response;
+// API wrapper using native fetch (App Bridge v4 auto-injects session tokens)
+const api = {
+  async get(endpoint, options = {}) {
+    const { params = {}, headers = {} } = options;
+    const url = buildUrl(endpoint, params);
+    
+    console.log('API Request: GET', endpoint);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        }
+      });
+      
+      console.log('API Response:', response.status, endpoint);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.detail || `HTTP ${response.status}`);
+        error.response = { status: response.status, data: errorData };
+        throw error;
+      }
+      
+      const data = await response.json();
+      return { data, status: response.status };
+    } catch (error) {
+      console.error('API Error:', error.response?.status || 'Network', error.message);
+      throw error;
+    }
   },
-  (error) => {
-    console.error('API Error:', error.response?.status, error.message);
-    return Promise.reject(error);
+  
+  async post(endpoint, body = {}, options = {}) {
+    const { params = {}, headers = {} } = options;
+    const url = buildUrl(endpoint, params);
+    
+    console.log('API Request: POST', endpoint);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        },
+        body: JSON.stringify(body)
+      });
+      
+      console.log('API Response:', response.status, endpoint);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.detail || `HTTP ${response.status}`);
+        error.response = { status: response.status, data: errorData };
+        throw error;
+      }
+      
+      const data = await response.json();
+      return { data, status: response.status };
+    } catch (error) {
+      console.error('API Error:', error.response?.status || 'Network', error.message);
+      throw error;
+    }
   }
-);
+};
 
-// Helper to create authenticated request config
+// Legacy helper (no longer needed with App Bridge v4 auto-injection)
 export const withSessionToken = (token) => ({
   headers: {
     'Authorization': `Bearer ${token}`
