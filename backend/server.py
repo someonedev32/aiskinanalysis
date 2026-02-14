@@ -18,6 +18,24 @@ db = client[os.environ['DB_NAME']]
 # Create the main app
 app = FastAPI(title="AI Skin Analysis - Shopify App")
 
+# CORS must be added BEFORE routes
+# Allow requests from Vercel frontend, Shopify Admin, and development
+cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+# Always allow Shopify admin
+cors_origins.extend([
+    "https://admin.shopify.com",
+    "https://*.myshopify.com",
+])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for Shopify embedded apps
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
 # Root route - handle Shopify app open
 @app.get("/")
 async def app_root(request: Request):
