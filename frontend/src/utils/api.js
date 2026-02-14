@@ -43,6 +43,7 @@ const api = {
     }
     
     try {
+      console.log('API: Making fetch request...');
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -53,19 +54,25 @@ const api = {
         // Note: Don't use credentials: 'include' for cross-origin requests to avoid CORB
       });
       
-      console.log('API Response:', response.status, endpoint);
+      console.log('API Response received:', response.status, response.statusText, endpoint);
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorText = await response.text();
+        console.error('API Error Response Body:', errorText);
+        const errorData = JSON.parse(errorText || '{}');
         const error = new Error(errorData.detail || `HTTP ${response.status}`);
         error.response = { status: response.status, data: errorData };
         throw error;
       }
       
       const data = await response.json();
+      console.log('API Data parsed successfully');
       return { data, status: response.status };
     } catch (error) {
-      console.error('API Error:', error.response?.status || 'Network', error.message);
+      console.error('API Fetch Error:', error.name, error.message);
+      if (error.name === 'TypeError') {
+        console.error('Network error - possibly CORS or connection issue');
+      }
       throw error;
     }
   },
