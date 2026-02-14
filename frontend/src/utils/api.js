@@ -26,7 +26,7 @@ const api = {
     const { params = {}, headers = {} } = options;
     const url = buildUrl(endpoint, params);
     
-    console.log('API Request: GET', endpoint);
+    console.log('API Request: GET', endpoint, url);
     
     try {
       const response = await fetch(url, {
@@ -34,10 +34,13 @@ const api = {
         headers: {
           'Content-Type': 'application/json',
           ...headers
-        }
+        },
+        credentials: 'include'
       });
       
+      // Log full response info including headers for debugging
       console.log('API Response:', response.status, endpoint);
+      console.log('API Response Headers:', [...response.headers.entries()]);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -50,6 +53,7 @@ const api = {
       return { data, status: response.status };
     } catch (error) {
       console.error('API Error:', error.response?.status || 'Network', error.message);
+      console.error('Full error:', error);
       throw error;
     }
   },
