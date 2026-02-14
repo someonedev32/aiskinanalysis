@@ -1,8 +1,10 @@
 /**
  * App Bridge Provider for Shopify Embedded Apps
  * 
- * For App Bridge v4, we use the CDN script + window.shopify global
- * The CDN script in index.html provides the shopify global
+ * For App Bridge v4:
+ * - Uses CDN script + meta tag for API key
+ * - Session tokens are automatically injected into fetch() requests
+ * - No need to manually call idToken() - it's unreliable
  */
 import { createContext, useContext, useEffect, useState } from 'react';
 
@@ -13,7 +15,6 @@ const AppBridgeContext = createContext(null);
 export function useAppBridge() {
   const context = useContext(AppBridgeContext);
   if (context === undefined) {
-    // Return window.shopify if available
     return typeof window !== 'undefined' ? window.shopify : null;
   }
   return context;
@@ -27,18 +28,12 @@ export function AppBridgeProvider({ children }) {
     const checkAppBridge = () => {
       if (window.shopify) {
         console.log('[AppBridge] Ready via CDN');
+        console.log('[AppBridge] Session tokens will be auto-injected into fetch() requests');
         setShopify(window.shopify);
         
-        // Initialize session token for Shopify detection
-        if (typeof window.shopify.idToken === 'function') {
-          console.log('[AppBridge] Calling idToken for session token auth...');
-          window.shopify.idToken()
-            .then(token => {
-              if (token) {
-                console.log('[AppBridge] Session token acquired - Using session tokens for user authentication');
-              }
-            })
-            .catch(e => console.log('[AppBridge] Token:', e.message));
+        // Log App Bridge config for debugging
+        if (window.shopify.config) {
+          console.log('[AppBridge] Config:', window.shopify.config);
         }
       } else {
         setTimeout(checkAppBridge, 100);
