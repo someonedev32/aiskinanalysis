@@ -115,7 +115,13 @@ export async function fetchSessionToken() {
     console.log('[AppBridge] Session token acquired');
     return token;
   } catch (error) {
-    console.error('[AppBridge] Failed to get session token:', error);
+    // Handle INVALID_ORIGIN error gracefully
+    if (error.message && error.message.includes('INVALID_ORIGIN')) {
+      console.warn('[AppBridge] Origin mismatch - check App URL in Partner Dashboard');
+      console.warn('[AppBridge] Expected origin should match your Vercel URL');
+    } else {
+      console.error('[AppBridge] Failed to get session token:', error.message);
+    }
     return null;
   }
 }
