@@ -36,12 +36,6 @@ jobs:
       
       - name: Deploy App with Extensions
         run: |
-          shopify app deploy --force --no-release
-        env:
-          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
-      
-      - name: Release Extension
-        run: |
-          shopify app release --force
+          shopify app deploy --force
         env:
           SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
