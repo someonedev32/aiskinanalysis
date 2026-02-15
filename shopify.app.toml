@@ -1,6 +1,6 @@
 client_id = "92a7db21219834a47df3e9caa9318972"
 name = "AI SkinAnalysis"
-application_url = "https://aiskinanalysis.onrender.com"
+application_url = "https://aiskinanalysis-xi.vercel.app"
 embedded = true
 
 [access_scopes]
