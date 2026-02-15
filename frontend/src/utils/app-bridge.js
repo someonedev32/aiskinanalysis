@@ -80,12 +80,19 @@ export function getAppBridge(overrides = {}) {
   
   console.log('[AppBridge] Initializing with apiKey:', apiKey.substring(0, 8) + '...');
   
-  appBridgeInstance = createApp({
-    apiKey,
-    host,
-  });
-  
-  console.log('[AppBridge] Initialized successfully');
+  try {
+    appBridgeInstance = createApp({
+      apiKey,
+      host,
+      forceRedirect: false, // Don't force redirect on origin mismatch
+    });
+    
+    console.log('[AppBridge] Initialized successfully');
+  } catch (error) {
+    console.error('[AppBridge] Initialization error:', error.message);
+    // Return null but don't crash the app
+    return null;
+  }
   
   return appBridgeInstance;
 }
