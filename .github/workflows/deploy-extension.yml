@@ -1,0 +1,47 @@
+name: Deploy Shopify Extension
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: shopify-deploy
+  cancel-in-progress: false
+
+env:
+  SHOPIFY_CLI_TTY: 0
+  SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+
+jobs:
+  deploy:
+    name: Deploy Theme Extension
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Shopify CLI
+        run: npm install -g @shopify/cli@latest @shopify/theme@latest
+      
+      - name: Verify Shopify CLI
+        run: shopify version
+      
+      - name: Deploy App with Extensions
+        run: |
+          shopify app deploy --force --no-release
+        env:
+          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+      
+      - name: Release Extension
+        run: |
+          shopify app release --force
+        env:
+          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
