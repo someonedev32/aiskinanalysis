@@ -201,7 +201,22 @@ async def get_billing_status(shop_domain: str):
     """Get current billing status for a shop."""
     shop = await db.shops.find_one({"shop_domain": shop_domain}, {"_id": 0, "access_token": 0})
     if not shop:
-        raise HTTPException(status_code=404, detail="Shop not found")
+        # Return a default status for shops not yet in database
+        # This happens when app is accessed but OAuth hasn't completed
+        return {
+            "shop_domain": shop_domain,
+            "plan": None,
+            "plan_info": {},
+            "scan_count": 0,
+            "scan_limit": 0,
+            "extra_scans_balance": 0,
+            "total_available": 0,
+            "billing_status": "not_installed",
+            "allows_extra_scans": False,
+            "billing_period_start": None,
+            "needs_reinstall": True,
+            "message": "Shop not found. Please reinstall the app to complete setup."
+        }
 
     plan_id = shop.get("plan")
     plan_info = PLANS.get(plan_id, {}) if plan_id else {}

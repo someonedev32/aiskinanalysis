@@ -160,6 +160,73 @@ export default function Billing() {
     );
   }
 
+  // Handle needs_reinstall case from billing status
+  if (billingStatus?.needs_reinstall) {
+    const handleReinstall = () => {
+      const shopHandle = shopDomain.replace('.myshopify.com', '');
+      window.open(`https://admin.shopify.com/store/${shopHandle}/settings/apps`, '_blank');
+    };
+
+    return (
+      <div className="space-y-6 animate-fade-in" data-testid="billing-reinstall">
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 text-amber-600 mt-0.5" />
+            <div>
+              <h2 className="text-lg font-semibold text-amber-800 mb-2">App Setup Required</h2>
+              <p className="text-sm text-amber-700 mb-4">
+                {billingStatus.message || "Please reinstall the app to complete setup and enable billing features."}
+              </p>
+              <Button
+                onClick={handleReinstall}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                Open App Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Still show plans for reference */}
+        <div>
+          <h2 className="text-xl font-semibold text-[#1A1A1A] mb-4">Available Plans</h2>
+          <p className="text-sm text-[#A1A1AA] mb-6">
+            <Zap className="inline w-4 h-4 text-[#4A6C58] mr-1" />
+            Start with a 3-day free trial on all plans
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {PLAN_ORDER.map((planId) => {
+              const plan = plans[planId];
+              if (!plan) return null;
+              const Icon = PLAN_ICONS[planId];
+              return (
+                <Card key={planId} className="p-5 bg-white rounded-xl border border-[#E4E4E7] flex flex-col opacity-75">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Icon className="w-5 h-5 text-[#4A6C58]" strokeWidth={1.5} />
+                    <span className="font-semibold text-[#1A1A1A]">{plan.name}</span>
+                  </div>
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-[#4A6C58]">${plan.price}</span>
+                    <span className="text-[#A1A1AA]">/ month</span>
+                  </div>
+                  <p className="text-sm text-[#666] mb-4">{plan.scan_limit.toLocaleString()} Analysis / Monthly</p>
+                  <ul className="space-y-2 flex-1 mb-6">
+                    {plan.features?.map((f, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-[#666]">
+                        <Check className="w-4 h-4 text-[#4A6C58]" strokeWidth={1.5} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in" data-testid="billing-loading">
