@@ -1,134 +1,112 @@
 /**
  * AI Skin Analysis - App Embed JavaScript
- * Floating widget with camera capture and AI analysis
  */
 
 (function() {
   'use strict';
 
-  const wrapper = document.getElementById('ai-skin-analysis-embed');
-  if (!wrapper) return;
+  var widget = document.getElementById('ai-skin-analysis-widget');
+  if (!widget) return;
 
-  // Configuration
-  const config = {
-    proxyUrl: wrapper.dataset.appProxyUrl,
-    shop: wrapper.dataset.shop,
-    collectionId: wrapper.dataset.collectionId || '',
-    position: wrapper.dataset.position || 'bottom-right',
-    showOnMobile: wrapper.dataset.showOnMobile !== 'false'
-  };
+  var apiUrl = widget.dataset.apiUrl;
+  var shopDomain = widget.dataset.shop;
 
   // Elements
-  const trigger = wrapper.querySelector('.skin-analysis-trigger');
-  const modal = wrapper.querySelector('.skin-analysis-modal');
-  const closeBtn = wrapper.querySelector('.skin-analysis-close');
-  const video = wrapper.querySelector('[data-video]');
-  const canvas = wrapper.querySelector('[data-canvas]');
-  const placeholder = wrapper.querySelector('[data-placeholder]');
-  const faceGuide = wrapper.querySelector('[data-face-guide]');
-  const scanOverlay = wrapper.querySelector('[data-scan-overlay]');
-  const startBtn = wrapper.querySelector('[data-start-btn]');
-  const captureBtn = wrapper.querySelector('[data-capture-btn]');
-  const retryBtn = wrapper.querySelector('[data-retry-btn]');
-  const cameraSection = wrapper.querySelector('[data-camera-section]');
-  const loadingSection = wrapper.querySelector('[data-loading-section]');
-  const resultsSection = wrapper.querySelector('[data-results-section]');
+  var trigger = document.getElementById('skin-analysis-trigger');
+  var modal = document.getElementById('skin-analysis-modal');
+  var closeBtn = document.getElementById('skin-close-btn');
+  var video = document.getElementById('skin-video');
+  var canvas = document.getElementById('skin-canvas');
+  var placeholder = document.getElementById('skin-placeholder');
+  var faceGuide = document.getElementById('skin-face-guide');
+  var scanOverlay = document.getElementById('skin-scan-overlay');
+  var startBtn = document.getElementById('skin-start-btn');
+  var captureBtn = document.getElementById('skin-capture-btn');
+  var retryBtn = document.getElementById('skin-retry-btn');
+  var cameraSection = document.getElementById('skin-camera-section');
+  var loadingSection = document.getElementById('skin-loading-section');
+  var resultsSection = document.getElementById('skin-results-section');
 
-  let stream = null;
-
-  // Apply position
-  wrapper.classList.add('position-' + config.position);
-
-  // Hide on mobile if disabled
-  if (!config.showOnMobile && window.innerWidth < 768) {
-    wrapper.style.display = 'none';
-  }
+  var stream = null;
 
   // Open modal
-  trigger.addEventListener('click', () => {
-    modal.style.display = 'flex';
+  trigger.addEventListener('click', function() {
+    modal.classList.add('active');
     document.body.style.overflow = 'hidden';
   });
 
   // Close modal
   closeBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => {
+  modal.addEventListener('click', function(e) {
     if (e.target === modal) closeModal();
   });
 
   function closeModal() {
-    modal.style.display = 'none';
+    modal.classList.remove('active');
     document.body.style.overflow = '';
     stopCamera();
     resetUI();
   }
 
   // Start camera
-  startBtn.addEventListener('click', async () => {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
+  startBtn.addEventListener('click', function() {
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+    }).then(function(s) {
+      stream = s;
       video.srcObject = stream;
       video.style.display = 'block';
       placeholder.style.display = 'none';
       faceGuide.style.display = 'block';
       startBtn.style.display = 'none';
       captureBtn.style.display = 'inline-flex';
-    } catch (err) {
-      alert('Unable to access camera. Please grant camera permissions.');
-    }
+    }).catch(function(err) {
+      alert('Unable to access camera. Please allow camera permissions.');
+    });
   });
 
   // Capture and analyze
-  captureBtn.addEventListener('click', async () => {
+  captureBtn.addEventListener('click', function() {
     if (!stream || !video) return;
 
-    // Show scanning animation
     scanOverlay.style.display = 'block';
     captureBtn.disabled = true;
     captureBtn.textContent = 'Scanning...';
 
-    await new Promise(r => setTimeout(r, 1500));
+    setTimeout(function() {
+      var ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      var base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
-    // Capture frame
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      stopCamera();
+      cameraSection.style.display = 'none';
+      loadingSection.style.display = 'flex';
 
-    stopCamera();
-    cameraSection.style.display = 'none';
-    loadingSection.style.display = 'flex';
+      var analyzeUrl = apiUrl + '/api/proxy/analyze?shop=' + encodeURIComponent(shopDomain);
 
-    // Build URL
-    let analyzeUrl = config.proxyUrl + '/analyze?shop=' + encodeURIComponent(config.shop);
-    if (config.collectionId) {
-      analyzeUrl += '&collection_id=' + encodeURIComponent(config.collectionId);
-    }
-
-    try {
-      const response = await fetch(analyzeUrl, {
+      fetch(analyzeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64 })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          displayResults(data.result, data.products || []);
+        } else {
+          showError(data.message || 'Analysis failed');
+        }
+      })
+      .catch(function(err) {
+        showError('Connection error. Please try again.');
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        displayResults(data.result, data.products || []);
-      } else {
-        showError(data.message || 'Analysis failed. Please try again.');
-      }
-    } catch (error) {
-      showError('Connection error. Please try again.');
-    }
+    }, 1500);
   });
 
   // Retry
-  retryBtn.addEventListener('click', () => {
+  retryBtn.addEventListener('click', function() {
     resultsSection.style.display = 'none';
     cameraSection.style.display = 'block';
     resetUI();
@@ -138,44 +116,32 @@
     loadingSection.style.display = 'none';
     resultsSection.style.display = 'block';
 
-    // Score
-    const scoreEl = wrapper.querySelector('[data-score] .score-value');
-    if (scoreEl) scoreEl.textContent = result.score || 75;
+    document.getElementById('skin-score-value').textContent = result.score || 75;
+    document.getElementById('skin-type-value').textContent = result.skin_type || 'Normal';
 
-    // Skin type
-    const skinTypeEl = wrapper.querySelector('[data-skin-type] .detail-value');
-    if (skinTypeEl) skinTypeEl.textContent = result.skin_type || 'Normal';
-
-    // Concerns
-    const concernsEl = wrapper.querySelector('[data-concerns] .concerns-tags');
-    if (concernsEl && result.concerns) {
-      concernsEl.innerHTML = result.concerns.map(c => 
-        '<span class="concern-tag">' + escapeHtml(c) + '</span>'
-      ).join('');
+    var concernsEl = document.getElementById('skin-concerns-tags');
+    if (result.concerns && result.concerns.length > 0) {
+      concernsEl.innerHTML = result.concerns.map(function(c) {
+        return '<span class="concern-tag">' + escapeHtml(c) + '</span>';
+      }).join('');
     }
 
-    // Routine
-    const routineEl = wrapper.querySelector('[data-routine] .routine-steps');
-    if (routineEl) {
-      const routine = [...(result.am_routine || []), ...(result.pm_routine || [])].slice(0, 4);
-      routineEl.innerHTML = routine.map((step, i) => 
-        '<div class="routine-step"><span class="step-num">' + (i + 1) + '</span>' +
-        '<span class="step-text">' + escapeHtml(step.product_type) + '</span></div>'
-      ).join('');
-    }
+    var routineEl = document.getElementById('skin-routine-steps');
+    var routine = (result.am_routine || []).concat(result.pm_routine || []).slice(0, 4);
+    routineEl.innerHTML = routine.map(function(step, i) {
+      return '<div class="routine-step"><span class="step-num">' + (i + 1) + '</span>' +
+             '<span class="step-text">' + escapeHtml(step.product_type) + '</span></div>';
+    }).join('');
 
-    // Products
     if (products && products.length > 0) {
-      const productsSection = wrapper.querySelector('[data-products]');
-      const productsGrid = wrapper.querySelector('[data-products] .products-grid');
-      if (productsSection && productsGrid) {
-        productsGrid.innerHTML = products.slice(0, 3).map(p => 
-          '<a href="/products/' + escapeHtml(p.handle) + '" class="product-card">' +
-          '<img src="' + escapeHtml(p.image_url || '') + '" alt="' + escapeHtml(p.title) + '">' +
-          '<span>' + escapeHtml(p.title) + '</span></a>'
-        ).join('');
-        productsSection.style.display = 'block';
-      }
+      var productsSection = document.getElementById('skin-products-section');
+      var productsGrid = document.getElementById('skin-products-grid');
+      productsGrid.innerHTML = products.slice(0, 3).map(function(p) {
+        return '<a href="/products/' + escapeHtml(p.handle) + '" class="product-card">' +
+               '<img src="' + escapeHtml(p.image_url || '') + '" alt="' + escapeHtml(p.title) + '">' +
+               '<span>' + escapeHtml(p.title) + '</span></a>';
+      }).join('');
+      productsSection.style.display = 'block';
     }
   }
 
@@ -187,33 +153,31 @@
   }
 
   function resetUI() {
-    if (video) video.style.display = 'none';
-    if (placeholder) placeholder.style.display = 'flex';
-    if (faceGuide) faceGuide.style.display = 'none';
-    if (scanOverlay) scanOverlay.style.display = 'none';
-    if (startBtn) startBtn.style.display = 'inline-flex';
-    if (captureBtn) {
-      captureBtn.style.display = 'none';
-      captureBtn.disabled = false;
-      captureBtn.textContent = 'Analyze My Skin';
-    }
+    video.style.display = 'none';
+    placeholder.style.display = 'flex';
+    faceGuide.style.display = 'none';
+    scanOverlay.style.display = 'none';
+    startBtn.style.display = 'inline-flex';
+    captureBtn.style.display = 'none';
+    captureBtn.disabled = false;
+    captureBtn.textContent = 'Analyze My Skin';
   }
 
   function stopCamera() {
     if (stream) {
-      stream.getTracks().forEach(t => t.stop());
+      stream.getTracks().forEach(function(t) { t.stop(); });
       stream = null;
     }
   }
 
   function escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
+    var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
-  // Cleanup on page unload
   window.addEventListener('beforeunload', stopCamera);
 
+  console.log('[AI Skin Analysis] Script loaded');
 })();

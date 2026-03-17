@@ -1,197 +1,135 @@
 {% comment %}
-  AI Skin Analysis - App Embed Block
-  This creates a floating widget that appears on all pages
-  Merchants can enable/disable it in Theme Settings → App embeds
+  AI Skin Analysis - App Embed
+  Floating widget for skin analysis with AI
 {% endcomment %}
 
-<div id="ai-skin-analysis-embed" 
-     class="ai-skin-analysis-floating"
-     data-app-proxy-url="{{ shop.url }}/apps/skin-analysis"
-     data-shop="{{ shop.permanent_domain }}"
-     {% if block.settings.product_collection %}
-     data-collection-id="{{ block.settings.product_collection.id }}"
-     {% endif %}
-     data-position="{{ block.settings.position }}"
-     data-show-on-mobile="{{ block.settings.show_on_mobile }}"
-     style="--skin-primary: {{ block.settings.brand_color }};">
+{% liquid
+  assign api_url = 'https://aiskinanalysis.onrender.com'
+  assign shop_domain = shop.permanent_domain
+%}
+
+{{ 'skin-analysis-embed.css' | asset_url | stylesheet_tag }}
+
+<div id="ai-skin-analysis-widget" 
+     data-api-url="{{ api_url }}"
+     data-shop="{{ shop_domain }}"
+     style="display:none;">
   
-  <!-- Floating Button -->
-  <button type="button" class="skin-analysis-trigger" aria-label="Open Skin Analysis">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;">
+  <!-- Floating Trigger Button -->
+  <button type="button" id="skin-analysis-trigger" class="skin-trigger-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="8" r="5"/>
       <path d="M20 21a8 8 0 1 0-16 0"/>
     </svg>
-    <span>{{ block.settings.button_text }}</span>
+    <span>Skin Analysis</span>
   </button>
 
-  <!-- Modal Overlay -->
-  <div class="skin-analysis-modal" style="display:none;">
-    <div class="skin-analysis-modal-content">
-      <button type="button" class="skin-analysis-close" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;">
+  <!-- Modal -->
+  <div id="skin-analysis-modal" class="skin-modal">
+    <div class="skin-modal-content">
+      <button type="button" class="skin-close-btn" id="skin-close-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
       
-      <div class="skin-analysis-header">
-        <h2>{{ block.settings.heading }}</h2>
-        <p>{{ block.settings.subheading }}</p>
+      <div class="skin-header">
+        <h2>AI Skin Analysis</h2>
+        <p>Get personalized skincare recommendations</p>
       </div>
 
       <!-- Camera Section -->
-      <div class="skin-analysis-camera" data-camera-section>
-        <div class="skin-analysis-camera-frame" data-camera-frame>
-          <video autoplay playsinline muted data-video></video>
-          <canvas style="display:none;" data-canvas></canvas>
-          <div class="skin-analysis-face-guide" data-face-guide></div>
-          <div class="skin-analysis-scan-overlay" style="display:none;" data-scan-overlay>
-            <div class="skin-analysis-scan-line"></div>
-          </div>
-          <div class="skin-analysis-placeholder" data-placeholder>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;opacity:0.5;">
+      <div id="skin-camera-section" class="skin-camera-section">
+        <div class="skin-camera-frame">
+          <video id="skin-video" autoplay playsinline muted></video>
+          <canvas id="skin-canvas" style="display:none;"></canvas>
+          <div id="skin-placeholder" class="skin-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
               <circle cx="12" cy="13" r="4"/>
             </svg>
             <p>Position your face in the frame</p>
           </div>
+          <div id="skin-face-guide" class="skin-face-guide"></div>
+          <div id="skin-scan-overlay" class="skin-scan-overlay">
+            <div class="skin-scan-line"></div>
+          </div>
         </div>
 
-        <div class="skin-analysis-buttons">
-          <button type="button" class="skin-analysis-btn skin-analysis-btn-primary" data-start-btn>
+        <div class="skin-buttons">
+          <button type="button" id="skin-start-btn" class="skin-btn skin-btn-primary">
             Start Camera
           </button>
-          <button type="button" class="skin-analysis-btn skin-analysis-btn-primary" style="display:none;" data-capture-btn>
+          <button type="button" id="skin-capture-btn" class="skin-btn skin-btn-primary" style="display:none;">
             Analyze My Skin
           </button>
         </div>
       </div>
 
       <!-- Loading Section -->
-      <div class="skin-analysis-loading" style="display:none;" data-loading-section>
-        <div class="skin-analysis-spinner"></div>
+      <div id="skin-loading-section" class="skin-loading-section" style="display:none;">
+        <div class="skin-spinner"></div>
         <p>Analyzing your skin...</p>
       </div>
 
       <!-- Results Section -->
-      <div class="skin-analysis-results" style="display:none;" data-results-section>
-        <div class="skin-analysis-score" data-score>
-          <span class="score-value">--</span>
+      <div id="skin-results-section" class="skin-results-section" style="display:none;">
+        <div class="skin-score">
+          <span id="skin-score-value" class="score-value">--</span>
           <span class="score-label">Skin Score</span>
         </div>
         
-        <div class="skin-analysis-details">
-          <div class="detail-card" data-skin-type>
+        <div class="skin-details">
+          <div class="skin-detail-card">
             <h4>Skin Type</h4>
-            <p class="detail-value">-</p>
+            <p id="skin-type-value">-</p>
           </div>
-          <div class="detail-card" data-concerns>
+          <div class="skin-detail-card">
             <h4>Concerns</h4>
-            <div class="concerns-tags"></div>
+            <div id="skin-concerns-tags" class="concerns-tags"></div>
           </div>
         </div>
 
-        <div class="skin-analysis-routine" data-routine>
+        <div id="skin-routine" class="skin-routine">
           <h4>Recommended Routine</h4>
-          <div class="routine-steps"></div>
+          <div id="skin-routine-steps" class="routine-steps"></div>
         </div>
 
-        <div class="skin-analysis-products" style="display:none;" data-products>
+        <div id="skin-products-section" class="skin-products" style="display:none;">
           <h4>Recommended Products</h4>
-          <div class="products-grid"></div>
+          <div id="skin-products-grid" class="products-grid"></div>
         </div>
 
-        <button type="button" class="skin-analysis-btn skin-analysis-btn-secondary" data-retry-btn>
+        <button type="button" id="skin-retry-btn" class="skin-btn skin-btn-secondary">
           Try Again
         </button>
       </div>
 
-      {% if block.settings.show_disclaimer %}
-      <div class="skin-analysis-disclaimer">
-        <p>This analysis is for cosmetic purposes only. No images are stored.</p>
+      <div class="skin-disclaimer">
+        <p>For cosmetic purposes only. No images stored.</p>
       </div>
-      {% endif %}
     </div>
   </div>
 </div>
+
+<script src="{{ 'skin-analysis-embed.js' | asset_url }}" defer></script>
+
+<script>
+  // Initialize widget after DOM ready
+  document.addEventListener('DOMContentLoaded', function() {
+    var widget = document.getElementById('ai-skin-analysis-widget');
+    if (widget) {
+      widget.style.display = 'block';
+      console.log('[AI Skin Analysis] Widget initialized');
+    }
+  });
+</script>
 
 {% schema %}
 {
   "name": "AI Skin Analysis",
   "target": "body",
-  "javascript": "skin-analysis-embed.js",
-  "stylesheet": "skin-analysis-embed.css",
-  "settings": [
-    {
-      "type": "header",
-      "content": "Button Settings"
-    },
-    {
-      "type": "text",
-      "id": "button_text",
-      "label": "Button Text",
-      "default": "Skin Analysis"
-    },
-    {
-      "type": "select",
-      "id": "position",
-      "label": "Button Position",
-      "options": [
-        { "value": "bottom-right", "label": "Bottom Right" },
-        { "value": "bottom-left", "label": "Bottom Left" },
-        { "value": "top-right", "label": "Top Right" },
-        { "value": "top-left", "label": "Top Left" }
-      ],
-      "default": "bottom-right"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_on_mobile",
-      "label": "Show on Mobile",
-      "default": true
-    },
-    {
-      "type": "header",
-      "content": "Widget Content"
-    },
-    {
-      "type": "text",
-      "id": "heading",
-      "label": "Heading",
-      "default": "AI Skin Analysis"
-    },
-    {
-      "type": "textarea",
-      "id": "subheading",
-      "label": "Subheading",
-      "default": "Discover your perfect skincare routine in seconds."
-    },
-    {
-      "type": "header",
-      "content": "Styling"
-    },
-    {
-      "type": "color",
-      "id": "brand_color",
-      "label": "Brand Color",
-      "default": "#2D5A4A"
-    },
-    {
-      "type": "header",
-      "content": "Products"
-    },
-    {
-      "type": "collection",
-      "id": "product_collection",
-      "label": "Product Collection",
-      "info": "Products to recommend based on skin analysis"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_disclaimer",
-      "label": "Show Disclaimer",
-      "default": true
-    }
-  ]
+  "settings": []
 }
 {% endschema %}

@@ -1,19 +1,20 @@
 /* AI Skin Analysis - App Embed Styles */
 
-.ai-skin-analysis-floating {
-  --skin-primary: #2D5A4A;
+#ai-skin-analysis-widget {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Floating Trigger Button */
-.skin-analysis-trigger {
+.skin-trigger-btn {
   position: fixed;
+  bottom: 20px;
+  right: 20px;
   z-index: 9998;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: var(--skin-primary);
+  background: #2D5A4A;
   color: #fff;
   border: none;
   border-radius: 50px;
@@ -24,34 +25,18 @@
   font-weight: 500;
 }
 
-.skin-analysis-trigger:hover {
+.skin-trigger-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.skin-trigger-btn:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 25px rgba(0,0,0,0.3);
 }
 
-/* Position variants */
-.position-bottom-right .skin-analysis-trigger {
-  bottom: 20px;
-  right: 20px;
-}
-
-.position-bottom-left .skin-analysis-trigger {
-  bottom: 20px;
-  left: 20px;
-}
-
-.position-top-right .skin-analysis-trigger {
-  top: 20px;
-  right: 20px;
-}
-
-.position-top-left .skin-analysis-trigger {
-  top: 20px;
-  left: 20px;
-}
-
-/* Modal Overlay */
-.skin-analysis-modal {
+/* Modal */
+.skin-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -59,15 +44,18 @@
   bottom: 0;
   z-index: 9999;
   background: rgba(0,0,0,0.6);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: 20px;
   backdrop-filter: blur(4px);
 }
 
-/* Modal Content */
-.skin-analysis-modal-content {
+.skin-modal.active {
+  display: flex;
+}
+
+.skin-modal-content {
   background: #fff;
   border-radius: 20px;
   width: 100%;
@@ -80,7 +68,7 @@
 }
 
 /* Close Button */
-.skin-analysis-close {
+.skin-close-btn {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -93,32 +81,37 @@
   transition: all 0.2s;
 }
 
-.skin-analysis-close:hover {
+.skin-close-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.skin-close-btn:hover {
   background: #f0f0f0;
   color: #333;
 }
 
 /* Header */
-.skin-analysis-header {
+.skin-header {
   text-align: center;
   margin-bottom: 24px;
 }
 
-.skin-analysis-header h2 {
+.skin-header h2 {
   font-size: 24px;
   font-weight: 600;
-  color: var(--skin-primary);
+  color: #2D5A4A;
   margin: 0 0 8px 0;
 }
 
-.skin-analysis-header p {
+.skin-header p {
   color: #666;
   font-size: 14px;
   margin: 0;
 }
 
-/* Camera Section */
-.skin-analysis-camera-frame {
+/* Camera */
+.skin-camera-frame {
   position: relative;
   width: 100%;
   aspect-ratio: 4/3;
@@ -128,14 +121,15 @@
   margin-bottom: 16px;
 }
 
-.skin-analysis-camera-frame video {
+.skin-camera-frame video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1);
+  display: none;
 }
 
-.skin-analysis-placeholder {
+.skin-placeholder {
   position: absolute;
   inset: 0;
   display: flex;
@@ -146,46 +140,54 @@
   gap: 12px;
 }
 
-.skin-analysis-face-guide {
+.skin-placeholder svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}
+
+.skin-face-guide {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 180px;
-  height: 240px;
-  border: 2px dashed var(--skin-primary);
+  width: 160px;
+  height: 200px;
+  border: 2px dashed #2D5A4A;
   border-radius: 50%;
   opacity: 0.5;
+  display: none;
 }
 
-.skin-analysis-scan-overlay {
+.skin-scan-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.3);
+  display: none;
 }
 
-.skin-analysis-scan-line {
+.skin-scan-line {
   position: absolute;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, transparent, var(--skin-primary), transparent);
-  box-shadow: 0 0 20px var(--skin-primary);
-  animation: scan 2s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, #2D5A4A, transparent);
+  box-shadow: 0 0 20px #2D5A4A;
+  animation: scanAnim 2s ease-in-out infinite;
 }
 
-@keyframes scan {
+@keyframes scanAnim {
   0%, 100% { top: 10%; }
   50% { top: 90%; }
 }
 
 /* Buttons */
-.skin-analysis-buttons {
+.skin-buttons {
   display: flex;
   justify-content: center;
   gap: 12px;
 }
 
-.skin-analysis-btn {
+.skin-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -199,34 +201,29 @@
   border: none;
 }
 
-.skin-analysis-btn-primary {
-  background: var(--skin-primary);
+.skin-btn-primary {
+  background: #2D5A4A;
   color: #fff;
 }
 
-.skin-analysis-btn-primary:hover:not(:disabled) {
+.skin-btn-primary:hover:not(:disabled) {
   opacity: 0.9;
-  transform: translateY(-1px);
 }
 
-.skin-analysis-btn-primary:disabled {
+.skin-btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.skin-analysis-btn-secondary {
+.skin-btn-secondary {
   background: #f5f5f5;
   color: #333;
   border: 1px solid #ddd;
 }
 
-.skin-analysis-btn-secondary:hover {
-  background: #eee;
-}
-
-/* Loading Section */
-.skin-analysis-loading {
-  display: flex;
+/* Loading */
+.skin-loading-section {
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -234,64 +231,65 @@
   gap: 16px;
 }
 
-.skin-analysis-spinner {
+.skin-spinner {
   width: 48px;
   height: 48px;
   border: 3px solid #eee;
-  border-top-color: var(--skin-primary);
+  border-top-color: #2D5A4A;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spinAnim 1s linear infinite;
 }
 
-@keyframes spin {
+@keyframes spinAnim {
   to { transform: rotate(360deg); }
 }
 
-/* Results Section */
-.skin-analysis-results {
+/* Results */
+.skin-results-section {
+  display: none;
   text-align: center;
 }
 
-.skin-analysis-score {
+.skin-score {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 24px;
 }
 
-.skin-analysis-score .score-value {
+.skin-score .score-value {
   font-size: 48px;
   font-weight: 700;
-  color: var(--skin-primary);
+  color: #2D5A4A;
 }
 
-.skin-analysis-score .score-label {
+.skin-score .score-label {
   font-size: 14px;
   color: #888;
 }
 
-.skin-analysis-details {
+.skin-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.detail-card {
+.skin-detail-card {
   background: #f9f9f9;
   padding: 16px;
   border-radius: 12px;
   text-align: left;
 }
 
-.detail-card h4 {
+.skin-detail-card h4 {
   font-size: 12px;
   color: #888;
   margin: 0 0 8px 0;
   text-transform: uppercase;
 }
 
-.detail-card .detail-value {
+.skin-detail-card p {
   font-size: 16px;
   font-weight: 600;
   color: #333;
@@ -307,14 +305,14 @@
 .concern-tag {
   display: inline-block;
   padding: 4px 10px;
-  background: var(--skin-primary);
+  background: #2D5A4A;
   color: #fff;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 /* Routine */
-.skin-analysis-routine {
+.skin-routine {
   background: #f9f9f9;
   padding: 16px;
   border-radius: 12px;
@@ -322,7 +320,7 @@
   text-align: left;
 }
 
-.skin-analysis-routine h4 {
+.skin-routine h4 {
   font-size: 14px;
   font-weight: 600;
   color: #333;
@@ -344,7 +342,7 @@
 .step-num {
   width: 24px;
   height: 24px;
-  background: var(--skin-primary);
+  background: #2D5A4A;
   color: #fff;
   border-radius: 50%;
   display: flex;
@@ -352,6 +350,7 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .step-text {
@@ -360,11 +359,11 @@
 }
 
 /* Products */
-.skin-analysis-products {
+.skin-products {
   margin-bottom: 20px;
 }
 
-.skin-analysis-products h4 {
+.skin-products h4 {
   font-size: 14px;
   font-weight: 600;
   color: #333;
@@ -389,7 +388,6 @@
 
 .product-card:hover {
   background: #f0f0f0;
-  transform: translateY(-2px);
 }
 
 .product-card img {
@@ -410,30 +408,30 @@
 }
 
 /* Disclaimer */
-.skin-analysis-disclaimer {
+.skin-disclaimer {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #eee;
 }
 
-.skin-analysis-disclaimer p {
+.skin-disclaimer p {
   font-size: 11px;
   color: #999;
   margin: 0;
   text-align: center;
 }
 
-/* Mobile Responsiveness */
+/* Mobile */
 @media (max-width: 767px) {
-  .skin-analysis-trigger span {
+  .skin-trigger-btn span {
     display: none;
   }
   
-  .skin-analysis-trigger {
+  .skin-trigger-btn {
     padding: 14px;
   }
   
-  .skin-analysis-modal-content {
+  .skin-modal-content {
     border-radius: 16px 16px 0 0;
     max-height: 95vh;
     margin-top: auto;
