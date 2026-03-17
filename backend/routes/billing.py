@@ -95,11 +95,19 @@ async def subscribe(req: SubscribeRequest):
 
     shop = await db.shops.find_one({"shop_domain": req.shop_domain})
     if not shop:
-        raise HTTPException(status_code=404, detail="Shop not found. Please reinstall the app.")
+        # Shop not in database - this means OAuth flow wasn't completed
+        # Return specific error message to help user reinstall
+        raise HTTPException(
+            status_code=400, 
+            detail="App not installed properly. Please go to your Shopify Admin > Apps, uninstall AI SkinAnalysis, and reinstall it."
+        )
 
     access_token = shop.get("access_token", "")
     if not access_token:
-        raise HTTPException(status_code=400, detail="Shop not authenticated. Please reinstall the app.")
+        raise HTTPException(
+            status_code=400, 
+            detail="App authorization incomplete. Please reinstall the app from Shopify Admin > Apps."
+        )
 
     app_url = os.environ.get('APP_URL', '')
     return_url = f"{app_url}/api/billing/confirm?shop={req.shop_domain}&plan={req.plan_id}"
