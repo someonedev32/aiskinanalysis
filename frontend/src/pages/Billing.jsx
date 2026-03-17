@@ -26,6 +26,13 @@ export default function Billing() {
     fetchBillingStatus();
   }, [shopDomain, shopLoading]);
 
+  // Auto-sync when billing status shows no plan but shop exists
+  useEffect(() => {
+    if (billingStatus && !billingStatus.plan && !billingStatus.needs_reinstall && shopDomain && !syncing) {
+      handleSyncStatus();
+    }
+  }, [billingStatus]);
+
   const fetchBillingStatus = async () => {
     try {
       const res = await api.get(`/billing/status/${shopDomain}`);
@@ -220,7 +227,7 @@ export default function Billing() {
             return (
               <div 
                 key={planId}
-                className={`p-4 rounded-xl border-2 transition-all ${
+                className={`p-4 rounded-xl border-2 transition-all flex flex-col ${
                   isCurrent 
                     ? 'border-[#4A6C58] bg-[#4A6C58]/5' 
                     : 'border-gray-200 hover:border-[#4A6C58]/50'
@@ -237,7 +244,7 @@ export default function Billing() {
                   <span className="text-2xl font-bold text-[#4A6C58]">${plan.price}</span>
                   <span className="text-[#71717A]">/month</span>
                 </div>
-                <ul className="space-y-2 text-sm text-[#666]">
+                <ul className="space-y-2 text-sm text-[#666] flex-1">
                   <li className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-[#4A6C58]" />
                     {plan.scans.toLocaleString()} scans/month
@@ -251,6 +258,14 @@ export default function Billing() {
                     Product recommendations
                   </li>
                 </ul>
+                <Button
+                  onClick={handleManageSubscription}
+                  variant={isCurrent ? "outline" : "default"}
+                  className={`w-full mt-4 ${isCurrent ? 'border-[#4A6C58] text-[#4A6C58]' : 'bg-[#4A6C58] hover:bg-[#3d5a4a] text-white'}`}
+                  size="sm"
+                >
+                  {isCurrent ? 'Current Plan' : 'Select Plan'}
+                </Button>
               </div>
             );
           })}
