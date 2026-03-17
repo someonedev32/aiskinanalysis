@@ -83,72 +83,31 @@ async def get_scan_packages(shop_domain: str = ""):
 
 @billing_router.post("/subscribe")
 async def subscribe(req: SubscribeRequest):
-    """Create a new subscription.
+    """Redirect to Shopify's Managed Pricing page.
     
-    Uses appSubscriptionCreate with:
-    - Recurring pricing for all plans
-    - Usage pricing component ONLY for Growth plan
+    For Managed Pricing apps, we redirect users to Shopify's hosted pricing page
+    instead of using the Billing API directly.
     """
-    plan = PLANS.get(req.plan_id)
-    if not plan:
-        raise HTTPException(status_code=400, detail="Invalid plan")
-
     shop = await db.shops.find_one({"shop_domain": req.shop_domain})
     if not shop:
-        # Shop not in database - this means OAuth flow wasn't completed
-        # Return specific error message to help user reinstall
         raise HTTPException(
             status_code=400, 
-            detail="App not installed properly. Please go to your Shopify Admin > Apps, uninstall AI SkinAnalysis, and reinstall it."
+            detail="App not installed properly. Please reinstall the app."
         )
 
-    access_token = shop.get("access_token", "")
-    if not access_token:
-        raise HTTPException(
-            status_code=400, 
-            detail="App authorization incomplete. Please reinstall the app from Shopify Admin > Apps."
-        )
-
-    app_url = os.environ.get('APP_URL', '')
-    return_url = f"{app_url}/api/billing/confirm?shop={req.shop_domain}&plan={req.plan_id}"
-
-    try:
-        result = await create_subscription(
-            req.shop_domain,
-            access_token,
-            req.plan_id,
-            return_url
-        )
-
-        # Store pending subscription with usage line item ID
-        await db.subscriptions.insert_one({
-            "shop_domain": req.shop_domain,
-            "plan_id": req.plan_id,
-            "subscription_id": result.get("subscription_id", ""),
-            "usage_line_item_id": result.get("usage_line_item_id"),  # For Growth plan
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-
-        logger.info(f"Subscription created for {req.shop_domain}: plan={req.plan_id}")
-        return {
-            "confirmation_url": result["confirmation_url"],
-            "subscription_id": result.get("subscription_id")
-        }
-
-    except Exception as e:
-        error_msg = str(e)
-        logger.error(f"Subscription error for {req.shop_domain}: {error_msg}")
-        
-        if "403" in error_msg or "Forbidden" in error_msg:
-            raise HTTPException(
-                status_code=403,
-                detail="Billing not available. Please ensure the app is properly configured in Shopify Partner Dashboard."
-            )
-        elif "401" in error_msg or "Unauthorized" in error_msg:
-            raise HTTPException(status_code=401, detail="Session expired. Please reinstall the app.")
-        else:
-            raise HTTPException(status_code=500, detail=f"Billing error: {error_msg}")
+    # For Managed Pricing, redirect to Shopify's pricing page
+    # The URL format is: https://admin.shopify.com/store/{shop_handle}/charges/{app_handle}/pricing_plans
+    shop_handle = req.shop_domain.replace('.myshopify.com', '')
+    
+    # The confirmation_url redirects to Shopify's managed pricing page
+    pricing_url = f"https://admin.shopify.com/store/{shop_handle}/charges/ai-skinanalysis/pricing_plans"
+    
+    logger.info(f"Redirecting {req.shop_domain} to Managed Pricing page: {pricing_url}")
+    
+    return {
+        "confirmation_url": pricing_url,
+        "pricing_type": "managed"
+    }
 
 
 @billing_router.get("/confirm")
