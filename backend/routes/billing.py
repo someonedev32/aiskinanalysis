@@ -210,44 +210,93 @@ async def get_billing_status(shop_domain: str):
 
 @billing_router.get("/sync/{shop_domain}")
 async def sync_subscription(shop_domain: str):
-    """Sync subscription status for Managed Pricing apps.
+    """Sync subscription status from Shopify.
     
-    For Managed Pricing, Shopify handles everything. We just need to mark the shop
-    as having an active subscription based on the redirect from pricing page.
+    Uses Shopify REST API to get recurring_application_charges
+    which works for both Managed Pricing and Billing API apps.
     """
     shop = await db.shops.find_one({"shop_domain": shop_domain})
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found")
 
-    # For Managed Pricing, we trust that if the user came back from pricing page,
-    # they have an active subscription. Shopify handles the billing.
-    current_plan = shop.get("plan")
+    access_token = shop.get("access_token", "")
     
-    # If no plan is set, default to "start" since that's what Managed Pricing shows as current
-    if not current_plan:
-        current_plan = "start"
+    # Try to get subscription info from Shopify REST API
+    current_plan = None
+    billing_status = "none"
     
-    plan_data = PLANS.get(current_plan, PLANS["start"])
+    if access_token:
+        try:
+            import httpx
+            async with httpx.AsyncClient() as client:
+                # Get recurring application charges
+                response = await client.get(
+                    f"https://{shop_domain}/admin/api/2024-10/recurring_application_charges.json",
+                    headers={
+                        "X-Shopify-Access-Token": access_token,
+                        "Content-Type": "application/json"
+                    }
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    charges = data.get("recurring_application_charges", [])
+                    
+                    # Find active charge
+                    for charge in charges:
+                        if charge.get("status") == "active":
+                            charge_name = charge.get("name", "").lower()
+                            
+                            # Map charge name to plan
+                            if "start" in charge_name:
+                                current_plan = "start"
+                            elif "plus" in charge_name:
+                                current_plan = "plus"
+                            elif "growth" in charge_name:
+                                current_plan = "growth"
+                            else:
+                                # Default to start if name doesn't match
+                                current_plan = "start"
+                            
+                            billing_status = "active"
+                            logger.info(f"Found active charge: {charge_name} -> plan={current_plan}")
+                            break
+                else:
+                    logger.warning(f"Failed to get charges: {response.status_code}")
+                    
+        except Exception as e:
+            logger.error(f"Error fetching charges: {e}")
+    
+    # If no active charge found but shop exists, check if they have a trial
+    if not current_plan and shop.get("plan"):
+        current_plan = shop.get("plan")
+        billing_status = shop.get("billing_status", "none")
     
     # Update shop with plan info
+    plan_data = PLANS.get(current_plan, {}) if current_plan else {}
+    
+    update_data = {
+        "billing_status": billing_status,
+        "subscription_synced_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if current_plan:
+        update_data["plan"] = current_plan
+        update_data["scan_limit"] = plan_data.get("scan_limit", 0)
+    
     await db.shops.update_one(
         {"shop_domain": shop_domain},
-        {"$set": {
-            "plan": current_plan,
-            "scan_limit": plan_data["scan_limit"],
-            "billing_status": "active",
-            "subscription_synced_at": datetime.now(timezone.utc).isoformat()
-        }}
+        {"$set": update_data}
     )
     
-    logger.info(f"Subscription synced for {shop_domain}: plan={current_plan}")
+    logger.info(f"Subscription synced for {shop_domain}: plan={current_plan}, status={billing_status}")
     
     return {
         "synced": True,
         "plan": current_plan,
-        "scan_limit": plan_data["scan_limit"],
-        "billing_status": "active",
-        "message": "Subscription synced via Managed Pricing"
+        "scan_limit": plan_data.get("scan_limit", 0) if plan_data else 0,
+        "billing_status": billing_status,
+        "message": f"Subscription synced: {current_plan or 'No active plan'}"
     }
 
 
