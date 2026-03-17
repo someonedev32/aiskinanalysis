@@ -62,8 +62,10 @@ export default function Billing() {
       const res = await api.get(`/billing/sync/${shopDomain}`);
       if (res.data.synced) {
         toast.success(`Plan synced: ${res.data.plan || 'No active plan'}`);
-        // Refresh billing status
-        await fetchBillingStatus();
+        // Force refresh billing status with a small delay to ensure DB is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const statusRes = await api.get(`/billing/status/${shopDomain}`);
+        setBillingStatus(statusRes.data);
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || "Failed to sync subscription");
