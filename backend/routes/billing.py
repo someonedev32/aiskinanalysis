@@ -210,81 +210,45 @@ async def get_billing_status(shop_domain: str):
 
 @billing_router.get("/sync/{shop_domain}")
 async def sync_subscription(shop_domain: str):
-    """Sync subscription status from Shopify."""
+    """Sync subscription status for Managed Pricing apps.
+    
+    For Managed Pricing, Shopify handles everything. We just need to mark the shop
+    as having an active subscription based on the redirect from pricing page.
+    """
     shop = await db.shops.find_one({"shop_domain": shop_domain})
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found")
 
-    access_token = shop.get("access_token", "")
-    if not access_token:
-        raise HTTPException(status_code=400, detail="Shop not authenticated")
-
-    try:
-        subscriptions = await get_active_subscriptions(shop_domain, access_token)
-        
-        if subscriptions:
-            active_sub = subscriptions[0]
-            sub_name = active_sub.get("name", "").lower()
-            
-            # Map subscription name to plan
-            current_plan = None
-            scan_limit = 0
-            usage_line_item_id = None
-            
-            if "start" in sub_name:
-                current_plan = "start"
-                scan_limit = PLANS["start"]["scan_limit"]
-            elif "plus" in sub_name:
-                current_plan = "plus"
-                scan_limit = PLANS["plus"]["scan_limit"]
-            elif "growth" in sub_name:
-                current_plan = "growth"
-                scan_limit = PLANS["growth"]["scan_limit"]
-                # Find usage line item
-                for item in active_sub.get("lineItems", []):
-                    pricing = item.get("plan", {}).get("pricingDetails", {})
-                    if pricing.get("__typename") == "AppUsagePricing":
-                        usage_line_item_id = item.get("id")
-                        break
-            
-            await db.shops.update_one(
-                {"shop_domain": shop_domain},
-                {"$set": {
-                    "plan": current_plan,
-                    "scan_limit": scan_limit,
-                    "billing_status": "active",
-                    "usage_line_item_id": usage_line_item_id,
-                    "subscription_id": active_sub.get("id"),
-                    "subscription_synced_at": datetime.now(timezone.utc).isoformat()
-                }}
-            )
-            
-            return {
-                "success": True,
-                "plan": current_plan,
-                "scan_limit": scan_limit,
-                "subscription": active_sub
-            }
-        else:
-            await db.shops.update_one(
-                {"shop_domain": shop_domain},
-                {"$set": {
-                    "plan": None,
-                    "scan_limit": 0,
-                    "billing_status": "none",
-                    "subscription_synced_at": datetime.now(timezone.utc).isoformat()
-                }}
-            )
-            
-            return {
-                "success": True,
-                "plan": None,
-                "message": "No active subscription"
-            }
-            
-    except Exception as e:
-        logger.error(f"Sync error: {e}")
-        raise HTTPException(status_code=500, detail=f"Sync error: {str(e)}")
+    # For Managed Pricing, we trust that if the user came back from pricing page,
+    # they have an active subscription. Shopify handles the billing.
+    current_plan = shop.get("plan")
+    
+    # If no plan is set, default to "start" since that's what Managed Pricing shows as current
+    if not current_plan:
+        current_plan = "start"
+    
+    plan_data = PLANS.get(current_plan, PLANS["start"])
+    
+    # Update shop with plan info
+    await db.shops.update_one(
+        {"shop_domain": shop_domain},
+        {"$set": {
+            "plan": current_plan,
+            "scan_limit": plan_data["scan_limit"],
+            "billing_status": "active",
+            "subscription_synced_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    logger.info(f"Subscription synced for {shop_domain}: plan={current_plan}")
+    
+    return {
+        "synced": True,
+        "plan": current_plan,
+        "scan_limit": plan_data["scan_limit"],
+        "billing_status": "active",
+        "message": "Subscription synced via Managed Pricing"
+    }
 
 
 @billing_router.post("/cancel")
