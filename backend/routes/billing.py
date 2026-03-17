@@ -1,14 +1,14 @@
-"""Billing Routes - Shopify App Subscriptions with Usage Billing.
+"""Billing Routes - Shopify Managed Pricing.
 
 Plan Structure:
-- Start ($39/mo): 1,000 scans, no extras
-- Plus ($99/mo): 5,000 scans, no extras
-- Growth ($179/mo): 10,000 scans + usage-based extra scans
+- Start ($39/mo): 1,000 scans
+- Plus ($99/mo): 5,000 scans
+- Growth ($179/mo): 10,000 scans
 
-Uses GraphQL App Subscriptions API (appSubscriptionCreate).
-Extra scans use appUsageRecordCreate for Growth plan only.
+Uses Managed Pricing (plans defined in Partner Dashboard).
+Subscription status checked via currentAppInstallation GraphQL query.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -210,67 +210,89 @@ async def get_billing_status(shop_domain: str):
 
 @billing_router.get("/sync/{shop_domain}")
 async def sync_subscription(shop_domain: str):
-    """Sync subscription status from Shopify.
+    """Sync subscription status using currentAppInstallation GraphQL query.
     
-    Uses Shopify REST API to get recurring_application_charges
-    which works for both Managed Pricing and Billing API apps.
+    This is the correct way to check subscription status for Managed Pricing apps.
     """
     shop = await db.shops.find_one({"shop_domain": shop_domain})
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found")
 
     access_token = shop.get("access_token", "")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Shop not authenticated. Please reinstall the app.")
     
-    # Try to get subscription info from Shopify REST API
+    # Use currentAppInstallation query to get subscription status
+    query = """
+    query GetCurrentAppSubscriptions {
+      currentAppInstallation {
+        activeSubscriptions {
+          id
+          name
+          status
+          currentPeriodEnd
+        }
+      }
+    }
+    """
+    
     current_plan = None
     billing_status = "none"
+    subscription_data = None
     
-    if access_token:
-        try:
-            import httpx
-            async with httpx.AsyncClient() as client:
-                # Get recurring application charges
-                response = await client.get(
-                    f"https://{shop_domain}/admin/api/2024-10/recurring_application_charges.json",
-                    headers={
-                        "X-Shopify-Access-Token": access_token,
-                        "Content-Type": "application/json"
-                    }
-                )
+    try:
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"https://{shop_domain}/admin/api/2024-10/graphql.json",
+                headers={
+                    "X-Shopify-Access-Token": access_token,
+                    "Content-Type": "application/json"
+                },
+                json={"query": query}
+            )
+            
+            logger.info(f"GraphQL response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
                 
-                if response.status_code == 200:
-                    data = response.json()
-                    charges = data.get("recurring_application_charges", [])
+                if "errors" in data:
+                    logger.error(f"GraphQL errors: {data['errors']}")
+                else:
+                    app_installation = data.get("data", {}).get("currentAppInstallation", {})
+                    active_subs = app_installation.get("activeSubscriptions", [])
                     
-                    # Find active charge
-                    for charge in charges:
-                        if charge.get("status") == "active":
-                            charge_name = charge.get("name", "").lower()
+                    logger.info(f"Active subscriptions: {active_subs}")
+                    
+                    if active_subs:
+                        active_sub = active_subs[0]
+                        sub_name = active_sub.get("name", "").lower()
+                        sub_status = active_sub.get("status", "")
+                        
+                        subscription_data = active_sub
+                        
+                        if sub_status == "ACTIVE":
+                            billing_status = "active"
                             
-                            # Map charge name to plan
-                            if "start" in charge_name:
+                            # Map subscription name to plan
+                            if "start" in sub_name:
                                 current_plan = "start"
-                            elif "plus" in charge_name:
+                            elif "plus" in sub_name:
                                 current_plan = "plus"
-                            elif "growth" in charge_name:
+                            elif "growth" in sub_name:
                                 current_plan = "growth"
                             else:
                                 # Default to start if name doesn't match
                                 current_plan = "start"
                             
-                            billing_status = "active"
-                            logger.info(f"Found active charge: {charge_name} -> plan={current_plan}")
-                            break
-                else:
-                    logger.warning(f"Failed to get charges: {response.status_code}")
+                            logger.info(f"Found active subscription: {sub_name} -> plan={current_plan}")
+            else:
+                logger.warning(f"GraphQL request failed: {response.status_code} - {response.text}")
                     
-        except Exception as e:
-            logger.error(f"Error fetching charges: {e}")
-    
-    # If no active charge found but shop exists, check if they have a trial
-    if not current_plan and shop.get("plan"):
-        current_plan = shop.get("plan")
-        billing_status = shop.get("billing_status", "none")
+    except Exception as e:
+        logger.error(f"Error fetching subscription: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to sync: {str(e)}")
     
     # Update shop with plan info
     plan_data = PLANS.get(current_plan, {}) if current_plan else {}
@@ -283,6 +305,9 @@ async def sync_subscription(shop_domain: str):
     if current_plan:
         update_data["plan"] = current_plan
         update_data["scan_limit"] = plan_data.get("scan_limit", 0)
+        if subscription_data:
+            update_data["subscription_id"] = subscription_data.get("id")
+            update_data["subscription_period_end"] = subscription_data.get("currentPeriodEnd")
     
     await db.shops.update_one(
         {"shop_domain": shop_domain},
@@ -296,8 +321,43 @@ async def sync_subscription(shop_domain: str):
         "plan": current_plan,
         "scan_limit": plan_data.get("scan_limit", 0) if plan_data else 0,
         "billing_status": billing_status,
+        "subscription": subscription_data,
         "message": f"Subscription synced: {current_plan or 'No active plan'}"
     }
+
+
+@billing_router.get("/welcome")
+async def billing_welcome(request: Request):
+    """Welcome endpoint - Shopify redirects here after plan approval.
+    
+    This is the 'Welcome link' configured in Partner Dashboard.
+    Shopify appends charge_id parameter.
+    """
+    params = dict(request.query_params)
+    charge_id = params.get("charge_id", "")
+    shop = params.get("shop", "")
+    
+    logger.info(f"Billing welcome: shop={shop}, charge_id={charge_id}")
+    
+    if shop:
+        # Trigger sync to get the new subscription status
+        try:
+            shop_data = await db.shops.find_one({"shop_domain": shop})
+            if shop_data and shop_data.get("access_token"):
+                # Sync will update the plan info
+                pass  # The frontend will call /sync after redirect
+        except Exception as e:
+            logger.error(f"Welcome sync error: {e}")
+    
+    # Redirect to app billing page
+    frontend_url = os.environ.get("FRONTEND_URL", "")
+    if frontend_url:
+        redirect_url = f"{frontend_url}/billing?activated=true"
+        if shop:
+            redirect_url += f"&shop={shop}"
+        return RedirectResponse(url=redirect_url)
+    
+    return {"message": "Subscription activated", "charge_id": charge_id}
 
 
 @billing_router.post("/cancel")
