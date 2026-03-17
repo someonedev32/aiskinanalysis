@@ -1,0 +1,197 @@
+{% comment %}
+  AI Skin Analysis - App Embed Block
+  This creates a floating widget that appears on all pages
+  Merchants can enable/disable it in Theme Settings → App embeds
+{% endcomment %}
+
+<div id="ai-skin-analysis-embed" 
+     class="ai-skin-analysis-floating"
+     data-app-proxy-url="{{ shop.url }}/apps/skin-analysis"
+     data-shop="{{ shop.permanent_domain }}"
+     {% if block.settings.product_collection %}
+     data-collection-id="{{ block.settings.product_collection.id }}"
+     {% endif %}
+     data-position="{{ block.settings.position }}"
+     data-show-on-mobile="{{ block.settings.show_on_mobile }}"
+     style="--skin-primary: {{ block.settings.brand_color }};">
+  
+  <!-- Floating Button -->
+  <button type="button" class="skin-analysis-trigger" aria-label="Open Skin Analysis">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;">
+      <circle cx="12" cy="8" r="5"/>
+      <path d="M20 21a8 8 0 1 0-16 0"/>
+    </svg>
+    <span>{{ block.settings.button_text }}</span>
+  </button>
+
+  <!-- Modal Overlay -->
+  <div class="skin-analysis-modal" style="display:none;">
+    <div class="skin-analysis-modal-content">
+      <button type="button" class="skin-analysis-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      
+      <div class="skin-analysis-header">
+        <h2>{{ block.settings.heading }}</h2>
+        <p>{{ block.settings.subheading }}</p>
+      </div>
+
+      <!-- Camera Section -->
+      <div class="skin-analysis-camera" data-camera-section>
+        <div class="skin-analysis-camera-frame" data-camera-frame>
+          <video autoplay playsinline muted data-video></video>
+          <canvas style="display:none;" data-canvas></canvas>
+          <div class="skin-analysis-face-guide" data-face-guide></div>
+          <div class="skin-analysis-scan-overlay" style="display:none;" data-scan-overlay>
+            <div class="skin-analysis-scan-line"></div>
+          </div>
+          <div class="skin-analysis-placeholder" data-placeholder>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;opacity:0.5;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <p>Position your face in the frame</p>
+          </div>
+        </div>
+
+        <div class="skin-analysis-buttons">
+          <button type="button" class="skin-analysis-btn skin-analysis-btn-primary" data-start-btn>
+            Start Camera
+          </button>
+          <button type="button" class="skin-analysis-btn skin-analysis-btn-primary" style="display:none;" data-capture-btn>
+            Analyze My Skin
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Section -->
+      <div class="skin-analysis-loading" style="display:none;" data-loading-section>
+        <div class="skin-analysis-spinner"></div>
+        <p>Analyzing your skin...</p>
+      </div>
+
+      <!-- Results Section -->
+      <div class="skin-analysis-results" style="display:none;" data-results-section>
+        <div class="skin-analysis-score" data-score>
+          <span class="score-value">--</span>
+          <span class="score-label">Skin Score</span>
+        </div>
+        
+        <div class="skin-analysis-details">
+          <div class="detail-card" data-skin-type>
+            <h4>Skin Type</h4>
+            <p class="detail-value">-</p>
+          </div>
+          <div class="detail-card" data-concerns>
+            <h4>Concerns</h4>
+            <div class="concerns-tags"></div>
+          </div>
+        </div>
+
+        <div class="skin-analysis-routine" data-routine>
+          <h4>Recommended Routine</h4>
+          <div class="routine-steps"></div>
+        </div>
+
+        <div class="skin-analysis-products" style="display:none;" data-products>
+          <h4>Recommended Products</h4>
+          <div class="products-grid"></div>
+        </div>
+
+        <button type="button" class="skin-analysis-btn skin-analysis-btn-secondary" data-retry-btn>
+          Try Again
+        </button>
+      </div>
+
+      {% if block.settings.show_disclaimer %}
+      <div class="skin-analysis-disclaimer">
+        <p>This analysis is for cosmetic purposes only. No images are stored.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "AI Skin Analysis",
+  "target": "body",
+  "javascript": "skin-analysis-embed.js",
+  "stylesheet": "skin-analysis-embed.css",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Button Settings"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Skin Analysis"
+    },
+    {
+      "type": "select",
+      "id": "position",
+      "label": "Button Position",
+      "options": [
+        { "value": "bottom-right", "label": "Bottom Right" },
+        { "value": "bottom-left", "label": "Bottom Left" },
+        { "value": "top-right", "label": "Top Right" },
+        { "value": "top-left", "label": "Top Left" }
+      ],
+      "default": "bottom-right"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_on_mobile",
+      "label": "Show on Mobile",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Widget Content"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "AI Skin Analysis"
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Discover your perfect skincare routine in seconds."
+    },
+    {
+      "type": "header",
+      "content": "Styling"
+    },
+    {
+      "type": "color",
+      "id": "brand_color",
+      "label": "Brand Color",
+      "default": "#2D5A4A"
+    },
+    {
+      "type": "header",
+      "content": "Products"
+    },
+    {
+      "type": "collection",
+      "id": "product_collection",
+      "label": "Product Collection",
+      "info": "Products to recommend based on skin analysis"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_disclaimer",
+      "label": "Show Disclaimer",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

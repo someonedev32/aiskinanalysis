@@ -1,0 +1,441 @@
+/* AI Skin Analysis - App Embed Styles */
+
+.ai-skin-analysis-floating {
+  --skin-primary: #2D5A4A;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Floating Trigger Button */
+.skin-analysis-trigger {
+  position: fixed;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--skin-primary);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.skin-analysis-trigger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+}
+
+/* Position variants */
+.position-bottom-right .skin-analysis-trigger {
+  bottom: 20px;
+  right: 20px;
+}
+
+.position-bottom-left .skin-analysis-trigger {
+  bottom: 20px;
+  left: 20px;
+}
+
+.position-top-right .skin-analysis-trigger {
+  top: 20px;
+  right: 20px;
+}
+
+.position-top-left .skin-analysis-trigger {
+  top: 20px;
+  left: 20px;
+}
+
+/* Modal Overlay */
+.skin-analysis-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+/* Modal Content */
+.skin-analysis-modal-content {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 24px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+}
+
+/* Close Button */
+.skin-analysis-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: #666;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.skin-analysis-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Header */
+.skin-analysis-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.skin-analysis-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--skin-primary);
+  margin: 0 0 8px 0;
+}
+
+.skin-analysis-header p {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Camera Section */
+.skin-analysis-camera-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #1a1a1a;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.skin-analysis-camera-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.skin-analysis-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  gap: 12px;
+}
+
+.skin-analysis-face-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180px;
+  height: 240px;
+  border: 2px dashed var(--skin-primary);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.skin-analysis-scan-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+}
+
+.skin-analysis-scan-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--skin-primary), transparent);
+  box-shadow: 0 0 20px var(--skin-primary);
+  animation: scan 2s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0%, 100% { top: 10%; }
+  50% { top: 90%; }
+}
+
+/* Buttons */
+.skin-analysis-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.skin-analysis-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.skin-analysis-btn-primary {
+  background: var(--skin-primary);
+  color: #fff;
+}
+
+.skin-analysis-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.skin-analysis-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.skin-analysis-btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.skin-analysis-btn-secondary:hover {
+  background: #eee;
+}
+
+/* Loading Section */
+.skin-analysis-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.skin-analysis-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #eee;
+  border-top-color: var(--skin-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Results Section */
+.skin-analysis-results {
+  text-align: center;
+}
+
+.skin-analysis-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.skin-analysis-score .score-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--skin-primary);
+}
+
+.skin-analysis-score .score-label {
+  font-size: 14px;
+  color: #888;
+}
+
+.skin-analysis-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detail-card {
+  background: #f9f9f9;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.detail-card h4 {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+}
+
+.detail-card .detail-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.concerns-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.concern-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--skin-primary);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* Routine */
+.skin-analysis-routine {
+  background: #f9f9f9;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.skin-analysis-routine h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.routine-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.routine-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-num {
+  width: 24px;
+  height: 24px;
+  background: var(--skin-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step-text {
+  font-size: 14px;
+  color: #444;
+}
+
+/* Products */
+.skin-analysis-products {
+  margin-bottom: 20px;
+}
+
+.skin-analysis-products h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.product-card {
+  text-decoration: none;
+  color: inherit;
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.product-card:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+.product-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.product-card span {
+  font-size: 11px;
+  color: #333;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Disclaimer */
+.skin-analysis-disclaimer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.skin-analysis-disclaimer p {
+  font-size: 11px;
+  color: #999;
+  margin: 0;
+  text-align: center;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 767px) {
+  .skin-analysis-trigger span {
+    display: none;
+  }
+  
+  .skin-analysis-trigger {
+    padding: 14px;
+  }
+  
+  .skin-analysis-modal-content {
+    border-radius: 16px 16px 0 0;
+    max-height: 95vh;
+    margin-top: auto;
+  }
+}
