@@ -1,13 +1,22 @@
 {% comment %}
-  AI Skin Analysis - Professional Theme App Extension
-  Modern, responsive design for Desktop & Mobile
+  AI Skin Analysis - Theme App Extension Block
+  A professional skin analysis widget powered by AI
+  
+  For Online Store 2.0 themes - Add this block to any section
 {% endcomment %}
 
 {% schema %}
 {
-  "name": "Skin Analysis",
+  "name": "AI Skin Analysis",
   "target": "section",
+  "stylesheet": "skin-analysis.css",
+  "javascript": "skin-analysis.js",
+  "templates": ["page", "index", "product", "collection", "article"],
   "settings": [
+    {
+      "type": "header",
+      "content": "Display Settings"
+    },
     {
       "type": "text",
       "id": "heading",
@@ -21,123 +30,134 @@
       "default": "Discover your perfect skincare routine. Our AI analyzes your skin in seconds and provides personalized recommendations."
     },
     {
+      "type": "header",
+      "content": "Styling"
+    },
+    {
       "type": "color",
       "id": "brand_color",
       "label": "Primary Color",
       "default": "#2D5A4A"
     },
     {
+      "type": "header",
+      "content": "Product Recommendations"
+    },
+    {
       "type": "collection",
       "id": "product_collection",
       "label": "Product Collection",
-      "info": "Select a collection of skincare products to recommend"
+      "info": "Select a collection of skincare products to recommend based on analysis results"
+    },
+    {
+      "type": "header",
+      "content": "Additional Options"
     },
     {
       "type": "checkbox",
       "id": "show_disclaimer",
       "label": "Show Disclaimer",
-      "default": true
+      "default": true,
+      "info": "Display privacy and medical disclaimer at the bottom"
     }
   ]
 }
 {% endschema %}
 
-{{ 'skin-analysis.css' | asset_url | stylesheet_tag }}
-
-{%- assign primary_color = block.settings.brand_color | default: '#2D5A4A' -%}
-{%- assign primary_light = primary_color | color_lighten: 15 -%}
-{%- assign primary_dark = primary_color | color_darken: 15 -%}
-{%- assign collection_id = '' -%}
-{%- if block.settings.product_collection -%}
-  {%- assign collection_id = block.settings.product_collection.id -%}
-{%- endif -%}
+{% liquid
+  assign primary_color = block.settings.brand_color | default: '#2D5A4A'
+  assign collection_id = ''
+  if block.settings.product_collection
+    assign collection_id = block.settings.product_collection.id
+  endif
+%}
 
 <style>
-  #lumina-skin-analysis {
+  #skin-analysis-{{ block.id }} {
     --skin-primary: {{ primary_color }};
-    --skin-primary-light: {{ primary_light }};
-    --skin-primary-dark: {{ primary_dark }};
   }
   
-  /* Override all button styles with specific selectors */
-  #lumina-skin-analysis .lumina-btn-primary,
-  #lumina-skin-analysis button.lumina-btn-primary,
-  .lumina-wrapper .lumina-btn-primary {
-    background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important;
-    color: #fff !important;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.25) !important;
+  #skin-analysis-{{ block.id }} .lumina-btn-primary,
+  #skin-analysis-{{ block.id }} button.lumina-btn-primary {
+    background: {{ primary_color }};
+    color: #fff;
   }
   
-  #lumina-skin-analysis .lumina-btn-primary:hover,
-  #lumina-skin-analysis button.lumina-btn-primary:hover,
-  .lumina-wrapper .lumina-btn-primary:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35) !important;
-    filter: brightness(1.05);
+  #skin-analysis-{{ block.id }} .lumina-btn-primary:hover,
+  #skin-analysis-{{ block.id }} button.lumina-btn-primary:hover {
+    opacity: 0.9;
   }
   
-  #lumina-skin-analysis .lumina-score-value { color: {{ primary_color }} !important; }
-  #lumina-skin-analysis .lumina-badge { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; color: #fff !important; }
-  #lumina-skin-analysis .lumina-card-icon { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
-  #lumina-skin-analysis .lumina-step-num { background: linear-gradient(135deg, {{ primary_color }}, {{ primary_light }}) !important; }
-  #lumina-skin-analysis .lumina-product-price { color: {{ primary_color }} !important; }
-  #lumina-skin-analysis .lumina-spinner { border-top-color: {{ primary_color }} !important; }
-  
-  #lumina-skin-analysis .lumina-title,
-  .lumina-wrapper .lumina-title {
-    background: linear-gradient(135deg, {{ primary_color }} 0%, {{ primary_light }} 100%) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+  #skin-analysis-{{ block.id }} .lumina-score-value { 
+    color: {{ primary_color }}; 
   }
   
-  /* Scan line animation with custom color */
-  #lumina-skin-analysis .lumina-scan-line {
-    background: linear-gradient(90deg, transparent 0%, {{ primary_color }} 20%, {{ primary_light }} 50%, {{ primary_color }} 80%, transparent 100%) !important;
-    box-shadow: 0 0 20px {{ primary_color }}, 0 0 40px {{ primary_color }} !important;
+  #skin-analysis-{{ block.id }} .lumina-badge { 
+    background: {{ primary_color }}; 
+    color: #fff; 
   }
   
-  /* Face guide with custom color */
-  #lumina-skin-analysis .lumina-face-guide {
-    border-color: {{ primary_color }}50 !important;
+  #skin-analysis-{{ block.id }} .lumina-card-icon { 
+    background: {{ primary_color }}; 
   }
   
-  /* Active camera frame with custom color */
-  #lumina-skin-analysis .lumina-camera-frame.active {
-    border-color: {{ primary_color }} !important;
+  #skin-analysis-{{ block.id }} .lumina-step-num { 
+    background: {{ primary_color }}; 
   }
   
-  /* Product card hover */
-  #lumina-skin-analysis .lumina-product-card:hover {
-    border-color: {{ primary_color }} !important;
+  #skin-analysis-{{ block.id }} .lumina-spinner { 
+    border-top-color: {{ primary_color }}; 
   }
   
-  /* Tag hover */
-  #lumina-skin-analysis .lumina-tag:hover {
-    border-color: {{ primary_color }} !important;
-    color: {{ primary_color }} !important;
+  #skin-analysis-{{ block.id }} .lumina-title {
+    color: {{ primary_color }};
+  }
+  
+  #skin-analysis-{{ block.id }} .lumina-scan-line {
+    background: linear-gradient(90deg, transparent 0%, {{ primary_color }} 50%, transparent 100%);
+    box-shadow: 0 0 20px {{ primary_color }};
+  }
+  
+  #skin-analysis-{{ block.id }} .lumina-face-guide {
+    border-color: {{ primary_color }};
+    opacity: 0.5;
+  }
+  
+  #skin-analysis-{{ block.id }} .lumina-camera-frame.active {
+    border-color: {{ primary_color }};
+  }
+  
+  #skin-analysis-{{ block.id }} .lumina-product-card:hover {
+    border-color: {{ primary_color }};
+  }
+  
+  #skin-analysis-{{ block.id }} .lumina-tag:hover {
+    border-color: {{ primary_color }};
+    color: {{ primary_color }};
   }
 </style>
 
-<div id="lumina-skin-analysis"
+<div id="skin-analysis-{{ block.id }}"
      class="lumina-wrapper"
+     data-block-id="{{ block.id }}"
      data-app-proxy-url="{{ shop.url }}/apps/skin-analysis"
      data-shop="{{ shop.permanent_domain }}"
      data-collection-id="{{ collection_id }}">
 
   <header class="lumina-header">
-    <h2 class="lumina-title">{{ block.settings.heading }}</h2>
-    <p class="lumina-subtitle">{{ block.settings.subheading }}</p>
+    <h2 class="lumina-title">{{ block.settings.heading | escape }}</h2>
+    <p class="lumina-subtitle">{{ block.settings.subheading | escape }}</p>
   </header>
 
-  <section id="lumina-camera-section" class="lumina-camera-section">
-    <div id="lumina-camera-frame" class="lumina-camera-frame">
-      <video id="lumina-video" autoplay playsinline muted class="lumina-video"></video>
-      <canvas id="lumina-canvas" style="display:none;"></canvas>
-      <div class="lumina-face-guide" style="display:none;"></div>
-      <div id="lumina-scan-overlay" class="lumina-scan-overlay" style="display:none;">
+  <section class="lumina-camera-section" data-camera-section>
+    <div class="lumina-camera-frame" data-camera-frame>
+      <video autoplay playsinline muted class="lumina-video" data-video></video>
+      <canvas style="display:none;" data-canvas></canvas>
+      <div class="lumina-face-guide" style="display:none;" data-face-guide></div>
+      <div class="lumina-scan-overlay" style="display:none;" data-scan-overlay>
         <div class="lumina-scan-line"></div>
       </div>
-      <div id="lumina-placeholder" class="lumina-placeholder">
+      <div class="lumina-placeholder" data-placeholder>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:64px;height:64px;opacity:0.5;">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
@@ -147,21 +167,21 @@
     </div>
 
     <div class="lumina-controls">
-      <button id="lumina-start-btn" class="lumina-btn lumina-btn-primary" onclick="luminaStartCamera()">
+      <button type="button" class="lumina-btn lumina-btn-primary" data-start-btn>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
         Start Camera
       </button>
-      <button id="lumina-capture-btn" class="lumina-btn lumina-btn-primary" style="display:none;" onclick="luminaCapture()">
+      <button type="button" class="lumina-btn lumina-btn-primary" style="display:none;" data-capture-btn>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
           <circle cx="12" cy="12" r="10"/>
           <path d="M12 6v6l4 2"/>
         </svg>
         Analyze My Skin
       </button>
-      <button id="lumina-retry-btn" class="lumina-btn lumina-btn-secondary" style="display:none;" onclick="luminaRetry()">
+      <button type="button" class="lumina-btn lumina-btn-secondary" style="display:none;" data-retry-btn>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
           <path d="M23 4v6h-6M1 20v-6h6"/>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
@@ -171,23 +191,23 @@
     </div>
   </section>
 
-  <section id="lumina-loading" class="lumina-loading" style="display:none;">
+  <section class="lumina-loading" style="display:none;" data-loading-section>
     <div class="lumina-spinner"></div>
     <p>Analyzing your skin...</p>
     <span class="lumina-loading-sub">This takes a few seconds</span>
   </section>
 
-  <section id="lumina-results" class="lumina-results" style="display:none;">
+  <section class="lumina-results" style="display:none;" data-results-section>
     <div class="lumina-results-header">
       <h3>Your Skin Analysis</h3>
-      <div id="lumina-score" class="lumina-score">
+      <div class="lumina-score" data-score>
         <div class="lumina-score-value">--</div>
         <div class="lumina-score-label">out of 100</div>
       </div>
     </div>
 
     <div class="lumina-cards-grid">
-      <div id="lumina-skin-type" class="lumina-info-card">
+      <div class="lumina-info-card" data-skin-type>
         <div class="lumina-card-header">
           <div class="lumina-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -200,7 +220,7 @@
         <div class="lumina-card-content"></div>
       </div>
 
-      <div id="lumina-concerns" class="lumina-info-card">
+      <div class="lumina-info-card" data-concerns>
         <div class="lumina-card-header">
           <div class="lumina-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -213,7 +233,7 @@
         <div class="lumina-card-content lumina-tags"></div>
       </div>
 
-      <div id="lumina-ingredients" class="lumina-info-card full-width">
+      <div class="lumina-info-card full-width" data-ingredients>
         <div class="lumina-card-header">
           <div class="lumina-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -225,7 +245,7 @@
         <div class="lumina-card-content lumina-ingredients-list"></div>
       </div>
 
-      <div id="lumina-am-routine" class="lumina-routine-card">
+      <div class="lumina-routine-card" data-am-routine>
         <div class="lumina-card-header">
           <div class="lumina-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -245,7 +265,7 @@
         <div class="lumina-card-content lumina-routine-steps"></div>
       </div>
 
-      <div id="lumina-pm-routine" class="lumina-routine-card">
+      <div class="lumina-routine-card" data-pm-routine>
         <div class="lumina-card-header">
           <div class="lumina-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -258,11 +278,11 @@
       </div>
     </div>
 
-    <div id="lumina-summary" class="lumina-summary">
+    <div class="lumina-summary" data-summary>
       <p></p>
     </div>
 
-    <div id="lumina-products" class="lumina-products" style="display:none;">
+    <div class="lumina-products" style="display:none;" data-products>
       <h4>Recommended Products For You</h4>
       <div class="lumina-products-grid"></div>
     </div>
@@ -275,5 +295,3 @@
   </footer>
   {% endif %}
 </div>
-
-<script src="{{ 'skin-analysis.js' | asset_url }}" defer></script>
