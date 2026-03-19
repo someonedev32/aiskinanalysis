@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, Zap, ExternalLink, RefreshCw, Crown, Rocket, AlertTriangle } from "lucide-react";
+import { Zap, ExternalLink, RefreshCw, Crown, Rocket, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useShopDomain } from "@/hooks/useShopDomain";
 
@@ -26,13 +26,6 @@ export default function Billing() {
     fetchBillingStatus();
   }, [shopDomain, shopLoading]);
 
-  // Auto-sync when billing status shows no plan but shop exists
-  useEffect(() => {
-    if (billingStatus && !billingStatus.plan && !billingStatus.needs_reinstall && shopDomain && !syncing) {
-      handleSyncStatus();
-    }
-  }, [billingStatus]);
-
   const fetchBillingStatus = async () => {
     try {
       const res = await api.get(`/billing/status/${shopDomain}`);
@@ -45,13 +38,9 @@ export default function Billing() {
   };
 
   const handleManageSubscription = () => {
-    // Redirect to Shopify's managed pricing page
     const shopHandle = shopDomain.replace('.myshopify.com', '');
     const pricingUrl = `https://admin.shopify.com/store/${shopHandle}/charges/ai-skinanalysis/pricing_plans`;
-    
-    // Check if we're in an iframe (embedded)
     const isEmbedded = window.self !== window.top;
-    
     if (isEmbedded) {
       try {
         window.top.location.href = pricingUrl;
@@ -69,13 +58,14 @@ export default function Billing() {
       const res = await api.get(`/billing/sync/${shopDomain}`);
       if (res.data.synced) {
         toast.success(`Plan synced: ${res.data.plan || 'No active plan'}`);
-        // Force refresh billing status with a small delay to ensure DB is updated
         await new Promise(resolve => setTimeout(resolve, 500));
         const statusRes = await api.get(`/billing/status/${shopDomain}`);
         setBillingStatus(statusRes.data);
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Failed to sync subscription");
+      // If sync fails, just refresh status from local DB
+      await fetchBillingStatus();
+      toast.info("Status refreshed");
     } finally {
       setSyncing(false);
     }
@@ -94,21 +84,17 @@ export default function Billing() {
       <div className="space-y-6 animate-fade-in">
         <div className="p-6 bg-red-50 border border-red-200 rounded-xl">
           <h2 className="text-lg font-semibold text-red-800 mb-2">Shop Not Found</h2>
-          <p className="text-sm text-red-600">
-            Please access this page through your Shopify admin panel.
-          </p>
+          <p className="text-sm text-red-600">Please access this page through your Shopify admin panel.</p>
         </div>
       </div>
     );
   }
 
-  // Handle needs_reinstall case
   if (billingStatus?.needs_reinstall) {
     const handleReinstall = () => {
       const shopHandle = shopDomain.replace('.myshopify.com', '');
       window.open(`https://admin.shopify.com/store/${shopHandle}/settings/apps`, '_blank');
     };
-
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl">
@@ -116,12 +102,8 @@ export default function Billing() {
             <AlertTriangle className="w-6 h-6 text-amber-600 mt-0.5" />
             <div>
               <h2 className="text-lg font-semibold text-amber-800 mb-2">App Setup Required</h2>
-              <p className="text-sm text-amber-700 mb-4">
-                {billingStatus.message || "Please reinstall the app to complete setup."}
-              </p>
-              <Button onClick={handleReinstall} className="bg-amber-600 hover:bg-amber-700 text-white">
-                Open App Settings
-              </Button>
+              <p className="text-sm text-amber-700 mb-4">{billingStatus.message || "Please reinstall the app to complete setup."}</p>
+              <Button onClick={handleReinstall} className="bg-amber-600 hover:bg-amber-700 text-white">Open App Settings</Button>
             </div>
           </div>
         </div>
@@ -135,24 +117,17 @@ export default function Billing() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#1A1A1A]">Billing</h1>
           <p className="text-[#71717A]">Manage your subscription</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleSyncStatus}
-          disabled={syncing}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={handleSyncStatus} disabled={syncing} className="gap-2">
           <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-          Sync Status
+          Refresh
         </Button>
       </div>
 
-      {/* Current Plan Card */}
       <Card className="p-6 bg-gradient-to-br from-[#4A6C58]/5 to-[#4A6C58]/10 border-[#4A6C58]/20">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
@@ -164,22 +139,15 @@ export default function Billing() {
                 {currentPlan ? `${planInfo?.name} Plan` : 'No Active Plan'}
               </h2>
               {currentPlan ? (
-                <p className="text-[#71717A]">
-                  ${planInfo?.price}/month • {planInfo?.scans.toLocaleString()} scans included
-                </p>
+                <p className="text-[#71717A]">${planInfo?.price}/month • {planInfo?.scans.toLocaleString()} scans included</p>
               ) : (
-                <p className="text-[#71717A]">
-                  Select a plan to get started with AI Skin Analysis
-                </p>
+                <p className="text-[#71717A]">Select a plan to get started with AI Skin Analysis</p>
               )}
             </div>
           </div>
-          {currentPlan && (
-            <Badge className="bg-[#4A6C58] text-white">Active</Badge>
-          )}
+          {currentPlan && <Badge className="bg-[#4A6C58] text-white">Active</Badge>}
         </div>
 
-        {/* Usage Stats */}
         {currentPlan && billingStatus && (
           <div className="mt-6 pt-6 border-t border-[#4A6C58]/10">
             <div className="flex items-center justify-between mb-2">
@@ -188,107 +156,23 @@ export default function Billing() {
                 {billingStatus.scan_count?.toLocaleString() || 0} / {billingStatus.scan_limit?.toLocaleString() || 0}
               </span>
             </div>
-            <Progress 
-              value={billingStatus.scan_limit > 0 ? (billingStatus.scan_count / billingStatus.scan_limit) * 100 : 0} 
-              className="h-2 bg-[#4A6C58]/10"
-            />
+            <Progress value={billingStatus.scan_limit > 0 ? (billingStatus.scan_count / billingStatus.scan_limit) * 100 : 0} className="h-2 bg-[#4A6C58]/10" />
             {billingStatus.extra_scans_balance > 0 && (
-              <p className="mt-2 text-sm text-[#4A6C58]">
-                + {billingStatus.extra_scans_balance.toLocaleString()} extra scans available
-              </p>
+              <p className="mt-2 text-sm text-[#4A6C58]">+ {billingStatus.extra_scans_balance.toLocaleString()} extra scans available</p>
             )}
           </div>
         )}
 
-        {/* Manage Button */}
         <div className="mt-6">
-          <Button 
-            onClick={handleManageSubscription}
-            className="w-full bg-[#4A6C58] hover:bg-[#3d5a4a] text-white gap-2"
-            size="lg"
-          >
+          <Button onClick={handleManageSubscription} className="w-full bg-[#4A6C58] hover:bg-[#3d5a4a] text-white gap-2" size="lg">
             <ExternalLink className="w-5 h-5" />
-            {currentPlan ? 'Manage Subscription' : 'Choose a Plan'}
+            {currentPlan ? 'Manage Subscription on Shopify' : 'View Plans on Shopify'}
           </Button>
           <p className="mt-2 text-xs text-center text-[#71717A]">
-            You'll be redirected to Shopify to manage your subscription
+            Billing is handled securely by Shopify. All plans include a 3-day free trial.
           </p>
         </div>
       </Card>
-
-      {/* Plan Comparison */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4">Available Plans</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Object.entries(PLAN_INFO).map(([planId, plan]) => {
-            const Icon = PLAN_ICONS[planId];
-            const isCurrent = currentPlan === planId;
-            
-            return (
-              <div 
-                key={planId}
-                className={`p-4 rounded-xl border-2 transition-all flex flex-col ${
-                  isCurrent 
-                    ? 'border-[#4A6C58] bg-[#4A6C58]/5' 
-                    : 'border-gray-200 hover:border-[#4A6C58]/50'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon className="w-5 h-5 text-[#4A6C58]" />
-                  <span className="font-semibold text-[#1A1A1A]">{plan.name}</span>
-                  {isCurrent && (
-                    <Badge className="ml-auto bg-[#4A6C58] text-white text-xs">Current</Badge>
-                  )}
-                </div>
-                <div className="mb-3">
-                  <span className="text-2xl font-bold text-[#4A6C58]">${plan.price}</span>
-                  <span className="text-[#71717A]">/month</span>
-                </div>
-                <ul className="space-y-2 text-sm text-[#666] flex-1">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#4A6C58]" />
-                    {plan.scans.toLocaleString()} scans/month
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#4A6C58]" />
-                    AI skin analysis
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#4A6C58]" />
-                    Product recommendations
-                  </li>
-                </ul>
-                <Button
-                  onClick={handleManageSubscription}
-                  variant={isCurrent ? "outline" : "default"}
-                  className={`w-full mt-4 ${isCurrent ? 'border-[#4A6C58] text-[#4A6C58]' : 'bg-[#4A6C58] hover:bg-[#3d5a4a] text-white'}`}
-                  size="sm"
-                >
-                  {isCurrent ? 'Current Plan' : 'Select Plan'}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className="mt-4 text-center">
-          <Button 
-            variant="outline" 
-            onClick={handleManageSubscription}
-            className="gap-2"
-          >
-            <ExternalLink className="w-4 h-4" />
-            View Full Pricing on Shopify
-          </Button>
-        </div>
-      </Card>
-
-      {/* Info */}
-      <div className="text-center text-sm text-[#A1A1AA]">
-        <p>
-          All plans include a 3-day free trial. Billing is handled securely by Shopify.
-        </p>
-      </div>
     </div>
   );
 }
